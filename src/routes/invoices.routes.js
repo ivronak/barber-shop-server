@@ -7,7 +7,7 @@ const invoicesController = require('../controllers/invoices.controller');
 router.get('/', verifyToken, invoicesController.getAllInvoices);
 
 // Get invoice by ID
-router.get('/:id', invoicesController.getInvoiceById);
+router.get('/:id', verifyToken,invoicesController.getInvoiceById);
 
 // Create new invoice
 router.post('/', verifyToken, invoicesController.createInvoice);

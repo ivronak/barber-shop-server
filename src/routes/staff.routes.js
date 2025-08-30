@@ -40,17 +40,17 @@ const isAdminOrSelf = (req, res, next) => {
 };
 
 // Protected routes (admin only for create/update/delete)
-router.get('/',  staffController.getAllStaff);
+router.get('/',  verifyToken,staffController.getAllStaff);
 router.get('/:id', verifyToken, staffController.getStaffById);
 router.post('/', staffController.createStaff);
 router.put('/:id', verifyToken, isAdmin, staffController.updateStaff);
 router.put('/:id/profile', verifyToken, isAdminOrSelf, staffController.updateOwnProfile);
 router.delete('/:id', verifyToken, isAdmin, staffController.deleteStaff);
-router.put('/:id/availability', staffController.updateWorkingHours);
+router.put('/:id/availability', verifyToken, isAdminOrSelf,staffController.updateWorkingHours);
 
 // New routes for staff breaks
 router.get('/:id/breaks', verifyToken, isAdminOrSelf, staffController.getStaffBreaks);
-router.post('/:id/breaks', staffController.createStaffBreak);
+router.post('/:id/breaks', verifyToken, isAdminOrSelf, staffController.createStaffBreak);
 router.put('/:id/breaks/:breakId', verifyToken, isAdminOrSelf, staffController.updateStaffBreak);
 router.delete('/:id/breaks/:breakId', verifyToken, isAdminOrSelf, staffController.deleteStaffBreak);
 
