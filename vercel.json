@@ -1,0 +1,46 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "src/server.js",
+      "use": "@vercel/node",
+      "config": {
+        "maxLambdaSize": "50mb",
+        "includeFiles": [
+          "node_modules/mysql2/**",
+          "node_modules/sequelize/**",
+          "node_modules/bcryptjs/**"
+        ]
+      }
+    }
+  ],
+  "buildCommand": "npm run vercel-build",
+  "routes": [
+    {
+      "src": "/health",
+      "dest": "src/server.js",
+      "methods": ["GET"]
+    },
+    {
+      "src": "/api-status",
+      "dest": "src/server.js",
+      "methods": ["GET"]
+    },
+    {
+      "src": "/api/(.*)",
+      "dest": "src/server.js"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "src/server.js"
+    }
+  ],
+  "env": {
+    "NODE_ENV": "production"
+  },
+  "build": {
+    "env": {
+      "NPM_FLAGS": "--no-optional"
+    }
+  }
+} 
