@@ -444,7 +444,7 @@ exports.getStaffDashboardData = async (req, res) => {
               `(SELECT COALESCE(SUM(isvc.tip_amount),0) 
       FROM invoice_services isvc 
       WHERE isvc.invoice_id IN (${invIdsStr}) 
-      AND DATE_FORMAT(isvc.createdAt, '${dateFormat}') = DATE_FORMAT(Invoice.date, '${dateFormat}'))`
+      )`
             ),
             "tips",
           ],
