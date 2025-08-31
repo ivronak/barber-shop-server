@@ -173,14 +173,15 @@ exports.getServiceById = async (req, res) => {
  */
 exports.createService = async (req, res) => {
   try {
-    let { name, description, price, duration, categoryId: bodyCategoryId, imageUrl, category, is_active } = req.body;
+    console.log("req.body",req.body)
+    let { name, description, price, duration, categoryId: bodyCategoryId, imageUrl, category, is_active,is_tip_eligible } = req.body;
     
     // Legacy support: if categoryId not provided but category name is, look up ID
     if (!bodyCategoryId && category) {
       const catRecord = await ServiceCategory.findOne({ where: { name: category } });
       if (catRecord) bodyCategoryId = catRecord.id;
     }
-    
+    console.log('bodyCategoryId',bodyCategoryId)
     // Validate required fields
     if (!name || !price || !duration || !bodyCategoryId) {
       return res.status(400).json({
@@ -198,6 +199,7 @@ exports.createService = async (req, res) => {
       category_id: bodyCategoryId,
       imageUrl,
       is_active: is_active !== undefined ? is_active : true,
+      is_tip_eligible
     });
     
     // Log activity if user is authenticated

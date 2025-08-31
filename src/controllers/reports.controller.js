@@ -1882,7 +1882,22 @@ const getStaffPerformanceMetrics = async (req, res) => {
       ],
       raw: true,
     });
-
+    const serviceRevenueRowAll = await InvoiceService.findAll({
+      where: { staff_id: targetStaffId },
+      include: [
+        {
+          model: Invoice,
+          as: "invoice",
+          attributes: ["id", "date", "status", "customer_id"],
+          where: {
+            date: { [Op.between]: [startDate, endDate] },
+            status: "paid",
+          },
+        },
+      ],
+      raw: true,
+    });
+    console.log("serviceRevenueRowAll", serviceRevenueRowAll);
     // Revenue from products sold by this staff (qualified column)
     const productRevenueRow = await InvoiceProduct.findOne({
       attributes: [
@@ -1904,13 +1919,27 @@ const getStaffPerformanceMetrics = async (req, res) => {
       ],
       raw: true,
     });
+    const productRevenueRowAll = await InvoiceProduct.findAll({
+      where: { staff_id: targetStaffId },
+      include: [
+        {
+          model: Invoice,
+          as: "invoice",
+          attributes: [],
+          where: {
+            date: { [Op.between]: [startDate, endDate] },
+            status: "paid",
+          },
+        },
+      ],
+      raw: true,
+    });
+
     const serviceRevenue = parseFloat(serviceRevenueRow?.revenue || 0);
     const productRevenue = parseFloat(productRevenueRow?.revenue || 0);
-    const productName = productRevenueRow?.product_name || "";
-    const invoiceNumber = productRevenueRow?.invoice_id || "";
-
+    
     const totalRevenue = serviceRevenue + productRevenue;
-
+   
     // Commission earned from services (locked amount)
     const serviceCommission =
       (await InvoiceService.sum("commission_amount", {
@@ -1984,12 +2013,38 @@ const getStaffPerformanceMetrics = async (req, res) => {
     });
 
     // Format service data
-    const servicesData = topServices.map((service) => ({
-      service_id: service.service_id,
-      service_name: service.service_name,
-      bookings: parseInt(service.bookings || 0),
-      revenue: parseFloat(service.revenue || 0),
-    }));
+    console.log("productRevenueRowAll", productRevenueRowAll, topServices);
+    const servicesData = topServices.map((service) => {
+      const revenueMatches = serviceRevenueRowAll.filter(
+        (rev) => rev.service_id === service.service_id
+      );
+      const invoiceIds = revenueMatches.map((rev) => rev.invoice_id);
+
+      const productNames = productRevenueRowAll
+        .filter((p) => invoiceIds.includes(p.invoice_id))
+        .map((p) => p.product_name);
+
+      // total tip + commission calculate karo
+      const totalTip = revenueMatches.reduce(
+        (sum, rev) => sum + (parseFloat(rev.tip_amount) || 0),
+        0
+      );
+
+      const totalCommission = revenueMatches.reduce(
+        (sum, rev) => sum + (parseFloat(rev.commission_amount) || 0),
+        0
+      );
+      return {
+        service_id: service.service_id,
+        service_name: service.service_name,
+        bookings: parseInt(service.bookings || 0),
+        revenue: parseFloat(service.revenue || 0),
+        tip: totalTip,
+        serviceCommission: totalCommission,
+        productNames: productNames,
+        invoiceIds: invoiceIds,
+      };
+    });
 
     console.log(`Found ${servicesData.length} services`);
 
@@ -2004,8 +2059,7 @@ const getStaffPerformanceMetrics = async (req, res) => {
         commission: commission,
         commissionPercentage: commissionPercentage,
         services: servicesData,
-        productName: productName,
-        invoiceNumber: invoiceNumber,
+
         dateRange: {
           from: dateFrom,
           to: dateTo,
