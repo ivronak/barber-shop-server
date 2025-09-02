@@ -87,16 +87,16 @@ exports.getAdminDashboardData = async (req, res) => {
         attributes: [
           [fn("date_format", col("date"), dateFormat), "date"],
           [fn("sum", col("total")), "revenue"],
-          [
-            literal(
-              "(SELECT COALESCE(SUM(isvc.tip_amount),0) FROM invoice_services isvc WHERE isvc.invoice_id IN (SELECT id FROM invoices inv2 WHERE DATE_FORMAT(inv2.date, '" +
-                dateFormat +
-                "') = DATE_FORMAT(Invoice.date, '" +
-                dateFormat +
-                '\') AND inv2.status = "paid"))'
-            ),
-            "tips",
-          ],
+          // [
+          //   literal(
+          //     "(SELECT COALESCE(SUM(isvc.tip_amount),0) FROM invoice_services isvc WHERE isvc.invoice_id IN (SELECT id FROM invoices inv2 WHERE DATE_FORMAT(inv2.date, '" +
+          //       dateFormat +
+          //       "') = DATE_FORMAT(Invoice.date, '" +
+          //       dateFormat +
+          //       '\') AND inv2.status = "paid"))'
+          //   ),
+          //   "tips",
+          // ],
           [fn("sum", col("discount_amount")), "discounts"],
         ],
         where: {
@@ -171,7 +171,7 @@ exports.getAdminDashboardData = async (req, res) => {
             },
           },
         ],
-        group: ["service_id"],
+        group: ["service_id","service_name"],
         order: [[fn("sum", col("quantity")), "DESC"]],
         limit: 5,
       }),
@@ -197,7 +197,7 @@ exports.getAdminDashboardData = async (req, res) => {
             },
           },
         ],
-        group: ["staff_id"],
+        group: ["staff_id","staff_name"],
         order: [[fn("sum", col("InvoiceService.total")), "DESC"]],
         limit: 5,
       }),

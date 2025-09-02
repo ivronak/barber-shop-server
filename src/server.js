@@ -16,7 +16,7 @@ app.use(cors());
 const BODY_LIMIT = process.env.BODY_LIMIT || '5mb';
 app.use(express.json({ limit: BODY_LIMIT }));
 app.use(express.urlencoded({ extended: true, limit: BODY_LIMIT }));
-
+console.log(process.env.NODE_ENV)
 // Initialize business settings
 const initializeBusinessSettings = async () => {
   try {
@@ -52,6 +52,7 @@ app.get('/health', async (req, res) => {
       host: process.env.DB_HOST || '(not set)',
       database: process.env.DB_NAME || '(not set)',
       username: process.env.DB_USERNAME || '(not set)',
+     
       // Don't include password
     };
     
@@ -78,7 +79,7 @@ app.get('/health', async (req, res) => {
     });
   }
 });
-
+;
 // Detailed diagnostic endpoint
 app.get('/diag', async (req, res) => {
   // This route is for diagnosing deployment issues
@@ -141,6 +142,7 @@ const connectDB = async () => {
     console.log('Running on Vercel:', process.env.VERCEL ? 'Yes' : 'No');
     console.log('Database host:', process.env.DB_HOST);
     console.log('Database name:', process.env.DB_NAME);
+    console.log('Database name:', process.env.DB_PORT);
     
     // Set a timeout for the database connection attempt
     const connectionPromise = sequelize.authenticate();
@@ -166,7 +168,7 @@ const connectDB = async () => {
     }
     return true;
   } catch (error) {
-    console.error('Unable to connect to the database:', error);
+    console.error('Unable to connect to the database1:', error);
     
     // Get more detailed error information
     const errorInfo = {

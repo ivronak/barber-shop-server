@@ -33,7 +33,7 @@ const sequelize = new Sequelize(
     host: config.host,
     dialect: config.dialect,
     logging: console.log,
-    port: config.port || 3306
+    port: config.port || 3307
   }
 );
 
