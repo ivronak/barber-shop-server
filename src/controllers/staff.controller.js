@@ -339,10 +339,10 @@ exports.getAllStaff = async (req, res) => {
           "YYYY-MM-DD HH:mm:ss",
           "America/Edmonton"
         );
-       console.log('start, end',start, end)
+        console.log("start, end", start, end);
         return now.isBetween(start, end, null, "[)");
       });
-      console.log("now", now,isOnBreak);
+      console.log("now", now, isOnBreak);
       return {
         ...staffJson,
         breaks: breaksByStaffId[staffMember.id] || [],

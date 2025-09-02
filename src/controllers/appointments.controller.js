@@ -1300,7 +1300,7 @@ exports.getCalendarAppointments = async (req, res) => {
         order: [['name', 'ASC']]
       })
     ]);
-    
+   
     // Format the staff and services data
     const staff = staffList.map(staffMember => ({
       id: staffMember.id,

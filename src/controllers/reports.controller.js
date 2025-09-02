@@ -172,7 +172,7 @@ const getDashboardStats = async (req, res) => {
             },
           },
         ],
-        group: ["staff_id"],
+        group: ["staff_id", "staff_name"],
       }),
     ]);
 
@@ -402,7 +402,7 @@ const getServicesReport = async (req, res) => {
           ],
         },
       ],
-      group: ["service_id"],
+      group: ["service_id", "service_name"],
       order,
     });
 
@@ -503,7 +503,7 @@ const getStaffReport = async (req, res) => {
         },
       ],
       where: staffId ? { staff_id: staffId } : {},
-      group: ["staff_id"],
+      group: ["staff_id", "staff_name"],
       order,
     });
 
@@ -1244,7 +1244,7 @@ const getAdvancedStaffMetrics = async (req, res) => {
             "service_name",
             [fn("COUNT", col("appointment_id")), "count"],
           ],
-          group: ["service_id"],
+          group: ["service_id", "service_name", "appointment_id"],
           order: [[fn("COUNT", col("appointment_id")), "DESC"]],
           limit: 3,
         });
@@ -1900,11 +1900,7 @@ const getStaffPerformanceMetrics = async (req, res) => {
     console.log("serviceRevenueRowAll", serviceRevenueRowAll);
     // Revenue from products sold by this staff (qualified column)
     const productRevenueRow = await InvoiceProduct.findOne({
-      attributes: [
-        "product_name",
-        [col("InvoiceProduct.invoice_id"), "invoice_id"],
-        [fn("sum", col("InvoiceProduct.total")), "revenue"],
-      ],
+      attributes: [[fn("sum", col("InvoiceProduct.total")), "revenue"]],
       where: { staff_id: targetStaffId },
       include: [
         {
@@ -1937,9 +1933,9 @@ const getStaffPerformanceMetrics = async (req, res) => {
 
     const serviceRevenue = parseFloat(serviceRevenueRow?.revenue || 0);
     const productRevenue = parseFloat(productRevenueRow?.revenue || 0);
-    
+
     const totalRevenue = serviceRevenue + productRevenue;
-   
+
     // Commission earned from services (locked amount)
     const serviceCommission =
       (await InvoiceService.sum("commission_amount", {
