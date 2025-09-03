@@ -21,6 +21,7 @@ const dayOfWeekUtils = require("../utils/dayOfWeekUtils");
  * Get all staff members with optional sorting and pagination
  */
 exports.getAllStaff = async (req, res) => {
+    const transaction = await sequelize.transaction();
   try {
     const {
       sort,

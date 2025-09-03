@@ -1017,7 +1017,7 @@ const getAdvancedRevenueMetrics = async (req, res) => {
             totaltCommision: totaltCommision,
             totalServices: totalServices,
             totalProduct: totalProduct,
-          },
+          },  
           daily: {
             average: currentDailyAverage,
             percentChange: parseFloat(dailyPercentChange.toFixed(1)),
