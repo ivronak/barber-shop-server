@@ -64,6 +64,10 @@ module.exports = (sequelize, DataTypes) => {
         key: 'id'
       }
     },
+    position: {
+      type: DataTypes.STRING, // Adjust type to match your schema
+      allowNull: true, // Allow NULL values
+    },
     bio: {
       type: DataTypes.TEXT,
       allowNull: true

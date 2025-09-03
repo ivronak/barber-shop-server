@@ -486,6 +486,7 @@ exports.createStaff = async (req, res) => {
       services,
       is_available,
       image,
+      position = null,
     } = req.body;
 
     // Validate required fields
@@ -528,6 +529,7 @@ exports.createStaff = async (req, res) => {
         bio,
         commission_percentage,
         is_available: is_available !== undefined ? is_available : true,
+        position,
       },
       { transaction }
     );
@@ -586,7 +588,7 @@ exports.createStaff = async (req, res) => {
     console.error("Create staff error:", error);
     return res.status(500).json({
       success: false,
-      message: "Internal server error",
+      message: error,
     });
   }
 };
