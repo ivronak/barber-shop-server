@@ -626,32 +626,10 @@ const getTipsAndDiscountsReport = async (req, res) => {
     const timeSeriesData = await Invoice.findAll({
       attributes: [
         [fn("date_format", col("date"), dateFormat), "date"],
-        [
-          literal(
-            "(SELECT COALESCE(SUM(isvc.tip_amount),0) FROM invoice_services isvc WHERE isvc.invoice_id IN (SELECT id FROM invoices inv2 WHERE DATE_FORMAT(inv2.date, '" +
-              dateFormat +
-              "') = DATE_FORMAT(Invoice.date, '" +
-              dateFormat +
-              '\') AND inv2.status = "paid"))'
-          ),
-          "tips",
-        ],
+
         [fn("sum", col("discount_amount")), "discounts"],
         [fn("sum", col("total")), "totalSales"],
-        [
-          literal(
-            "CASE WHEN SUM(total) > 0 THEN ( (SELECT COALESCE(SUM(isvc.tip_amount),0) FROM invoice_services isvc WHERE isvc.invoice_id IN (SELECT id FROM invoices inv2 WHERE DATE_FORMAT(inv2.date, '" +
-              dateFormat +
-              "') = DATE_FORMAT(Invoice.date, '" +
-              dateFormat +
-              '\') AND inv2.status = "paid")) / SUM(total) ) * 100 ELSE 0 END'
-          ),
-          "tipPercentage",
-        ],
-        [
-          literal("SUM(discount_amount) / NULLIF(SUM(subtotal),0) * 100"),
-          "discountPercentage",
-        ],
+
         [fn("count", col("id")), "invoiceCount"],
       ],
       where: {
@@ -692,7 +670,7 @@ const getTipsAndDiscountsReport = async (req, res) => {
       include: [
         { model: Invoice, as: "invoice", attributes: [], where: invoiceWhere },
       ],
-      group: ["staff_id"],
+      group: ["staff_id", "staff_name"],
     });
 
     // Get discount type breakdown
@@ -794,27 +772,27 @@ const getRevenueByDayOfWeek = async (req, res) => {
     // But our standardized day of week utility uses 0=Sunday, 1=Monday, etc. (JavaScript convention)
     const revenueByDay = await Invoice.findAll({
       attributes: [
-        [
-          literal(`LOWER(CASE 
-          WHEN DAYOFWEEK(date) = 1 THEN "sunday" 
-          WHEN DAYOFWEEK(date) = 2 THEN "monday" 
-          WHEN DAYOFWEEK(date) = 3 THEN "tuesday" 
-          WHEN DAYOFWEEK(date) = 4 THEN "wednesday" 
-          WHEN DAYOFWEEK(date) = 5 THEN "thursday" 
-          WHEN DAYOFWEEK(date) = 6 THEN "friday" 
-          ELSE "saturday" END)`),
-          "day_of_week",
-        ],
-        [literal(`DAYOFWEEK(date) - 1`), "numeric_day_of_week"], // Convert MySQL's 1-7 to JavaScript's 0-6
+        // [
+        //   literal(`LOWER(CASE
+        //   WHEN DAYOFWEEK(date) = 1 THEN "sunday"
+        //   WHEN DAYOFWEEK(date) = 2 THEN "monday"
+        //   WHEN DAYOFWEEK(date) = 3 THEN "tuesday"
+        //   WHEN DAYOFWEEK(date) = 4 THEN "wednesday"
+        //   WHEN DAYOFWEEK(date) = 5 THEN "thursday"
+        //   WHEN DAYOFWEEK(date) = 6 THEN "friday"
+        //   ELSE "saturday" END)`),
+        //   "day_of_week",
+        // ],
+        // [literal(`DAYOFWEEK(date) - 1`), "numeric_day_of_week"], // Convert MySQL's 1-7 to JavaScript's 0-6
         [fn("sum", col("total")), "revenue"],
         [fn("count", col("id")), "transactions"],
-        [literal("SUM(total) / COUNT(id)"), "avg_transaction"],
-        [
-          literal(
-            'CASE WHEN DAYOFWEEK(date) = 1 THEN "Sunday" WHEN DAYOFWEEK(date) = 2 THEN "Monday" WHEN DAYOFWEEK(date) = 3 THEN "Tuesday" WHEN DAYOFWEEK(date) = 4 THEN "Wednesday" WHEN DAYOFWEEK(date) = 5 THEN "Thursday" WHEN DAYOFWEEK(date) = 6 THEN "Friday" ELSE "Saturday" END'
-          ),
-          "day_name",
-        ],
+        // [literal("SUM(total) / COUNT(id)"), "avg_transaction"],
+        // [
+        //   literal(
+        //     'CASE WHEN DAYOFWEEK(date) = 1 THEN "Sunday" WHEN DAYOFWEEK(date) = 2 THEN "Monday" WHEN DAYOFWEEK(date) = 3 THEN "Tuesday" WHEN DAYOFWEEK(date) = 4 THEN "Wednesday" WHEN DAYOFWEEK(date) = 5 THEN "Thursday" WHEN DAYOFWEEK(date) = 6 THEN "Friday" ELSE "Saturday" END'
+        //   ),
+        //   "day_name",
+        // ],
       ],
       where: {
         date: {
@@ -838,18 +816,18 @@ const getRevenueByDayOfWeek = async (req, res) => {
 
     const previousRevenueByDay = await Invoice.findAll({
       attributes: [
-        [
-          literal(`LOWER(CASE 
-          WHEN DAYOFWEEK(date) = 1 THEN "sunday" 
-          WHEN DAYOFWEEK(date) = 2 THEN "monday" 
-          WHEN DAYOFWEEK(date) = 3 THEN "tuesday" 
-          WHEN DAYOFWEEK(date) = 4 THEN "wednesday" 
-          WHEN DAYOFWEEK(date) = 5 THEN "thursday" 
-          WHEN DAYOFWEEK(date) = 6 THEN "friday" 
-          ELSE "saturday" END)`),
-          "day_of_week",
-        ],
-        [literal(`DAYOFWEEK(date) - 1`), "numeric_day_of_week"], // Convert MySQL's 1-7 to JavaScript's 0-6
+        // [
+        //   literal(`LOWER(CASE
+        //   WHEN DAYOFWEEK(date) = 1 THEN "sunday"
+        //   WHEN DAYOFWEEK(date) = 2 THEN "monday"
+        //   WHEN DAYOFWEEK(date) = 3 THEN "tuesday"
+        //   WHEN DAYOFWEEK(date) = 4 THEN "wednesday"
+        //   WHEN DAYOFWEEK(date) = 5 THEN "thursday"
+        //   WHEN DAYOFWEEK(date) = 6 THEN "friday"
+        //   ELSE "saturday" END)`),
+        //   "day_of_week",
+        // ],
+        //[literal(`DAYOFWEEK(date) - 1`), "numeric_day_of_week"], // Convert MySQL's 1-7 to JavaScript's 0-6
         [fn("sum", col("total")), "revenue"],
       ],
       where: {
