@@ -916,7 +916,32 @@ const getAdvancedRevenueMetrics = async (req, res) => {
           status: "paid",
         },
       })) || 0;
-
+    const totaltTip =
+      (await InvoiceService.sum("tip_amount", {
+        // where: {
+        //   // date: {
+        //   //   [Op.between]: [queryDateFrom, queryDateTo],
+        //   // },
+        //   // status: "paid",
+        // },
+      })) || 0;
+    const totaltCommision =
+      (await InvoiceService.sum("commission_amount", {
+        // where: {
+        //   // date: {
+        //   //   [Op.between]: [queryDateFrom, queryDateTo],
+        //   // },
+        //   // status: "paid",
+        // },
+      })) || 0;
+    const totalServices = await Service.count({
+      // where: {
+      //   // date: {
+      //   //   [Op.between]: [queryDateFrom, queryDateTo],
+      //   // },
+      //   // status: "paid",
+      // },
+    });
     // Previous period total revenue
     const previousPeriodRevenue =
       (await Invoice.sum("total", {
@@ -979,6 +1004,9 @@ const getAdvancedRevenueMetrics = async (req, res) => {
             total: currentPeriodRevenue,
             percentChange: parseFloat(percentChange.toFixed(1)),
             projection: projectedRevenue,
+            totaltTip: totaltTip,
+            totaltCommision: totaltCommision,
+            totalServices:totalServices
           },
           daily: {
             average: currentDailyAverage,

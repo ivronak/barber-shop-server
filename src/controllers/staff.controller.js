@@ -323,6 +323,7 @@ exports.getAllStaff = async (req, res) => {
     }
     // Add breaks to staff data
     const staff = staffData.map((staffMember) => {
+      console.log("staffMember", staffMember?.is_on_break);
       const staffJson = staffMember.toJSON();
       const staffBreaks = breaksByStaffId[staffMember.id] || [];
       const now = moment.tz("America/Edmonton");
@@ -342,7 +343,12 @@ exports.getAllStaff = async (req, res) => {
         console.log("start, end", start, end);
         return now.isBetween(start, end, null, "[)");
       });
-      console.log("now", now, isOnBreak);
+      if (staffMember.is_on_break !== isOnBreak) {
+        staffMember.update({ is_on_break: false }, { transaction });
+        console.log(
+          `Updated isOnBreak to ${isOnBreak} for staff ID: ${staffMember.id}`
+        );
+      }
       return {
         ...staffJson,
         breaks: breaksByStaffId[staffMember.id] || [],
@@ -487,6 +493,7 @@ exports.createStaff = async (req, res) => {
       is_available,
       image,
       position = null,
+      is_on_break = false,
     } = req.body;
 
     // Validate required fields
@@ -530,6 +537,7 @@ exports.createStaff = async (req, res) => {
         commission_percentage,
         is_available: is_available !== undefined ? is_available : true,
         position,
+        is_on_break,
       },
       { transaction }
     );
@@ -1224,7 +1232,7 @@ exports.createStaffBreak = async (req, res) => {
       },
       { transaction }
     );
-
+    await staff.update({ is_on_break: true }, { transaction });
     // Log activity if user is authenticated
     if (req.user) {
       await ActivityLog.create(
