@@ -6,6 +6,7 @@ const {
   InvoiceService,
   Staff,
   Service,
+  Product,
   Customer,
   WorkingHour,
   User,
@@ -942,6 +943,14 @@ const getAdvancedRevenueMetrics = async (req, res) => {
       //   // status: "paid",
       // },
     });
+    const totalProduct = await Product.count({
+      // where: {
+      //   // date: {
+      //   //   [Op.between]: [queryDateFrom, queryDateTo],
+      //   // },
+      //   // status: "paid",
+      // },
+    });
     // Previous period total revenue
     const previousPeriodRevenue =
       (await Invoice.sum("total", {
@@ -1006,7 +1015,8 @@ const getAdvancedRevenueMetrics = async (req, res) => {
             projection: projectedRevenue,
             totaltTip: totaltTip,
             totaltCommision: totaltCommision,
-            totalServices:totalServices
+            totalServices: totalServices,
+            totalProduct: totalProduct,
           },
           daily: {
             average: currentDailyAverage,
