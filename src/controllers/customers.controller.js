@@ -330,7 +330,7 @@ exports.createCustomer = async (req, res) => {
     const customer = await Customer.create({
       name,
       email,
-      phone,
+      phone: "123",
       notes,
       visit_count: 0,
       total_spent: 0.0,

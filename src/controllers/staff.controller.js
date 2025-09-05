@@ -21,7 +21,6 @@ const dayOfWeekUtils = require("../utils/dayOfWeekUtils");
  * Get all staff members with optional sorting and pagination
  */
 exports.getAllStaff = async (req, res) => {
-    const transaction = await sequelize.transaction();
   try {
     const {
       sort,
@@ -36,126 +35,73 @@ exports.getAllStaff = async (req, res) => {
 
     // Force 10 items per page
     const limit = 10;
-
-    // Parse and validate pagination parameters
-    const parsedPage = parseInt(page, 10) || 1; // Default to 1 if NaN
-
-    // Ensure positive values
-    let validPage = Math.max(1, parsedPage);
+    let validPage = Math.max(1, parseInt(page, 10) || 1);
 
     console.log(`Processing staff request: page=${validPage}, limit=${limit}`);
 
-    // Two-step approach to ensure we get exactly 10 items per page
-    // Step 1: Get all staff IDs that match the criteria
+    // --- Step 1: Build staff query ---
     let staffQuery = {
       attributes: ["id"],
       where: {},
       order: [],
-    };
-
-    // Add availability filter if provided
-    if (isAvailable === "true" || isAvailable === "false") {
-      staffQuery.where.is_available = isAvailable === "true";
-    }
-
-    // Add commission range filter if provided
-    if (minCommission || maxCommission) {
-      staffQuery.where.commission_percentage = {};
-
-      if (minCommission) {
-        staffQuery.where.commission_percentage[Op.gte] =
-          parseFloat(minCommission);
-      }
-
-      if (maxCommission) {
-        staffQuery.where.commission_percentage[Op.lte] =
-          parseFloat(maxCommission);
-      }
-    }
-
-    // Add search filter if provided
-    if (search) {
-      // We need to join with User model for search
-      staffQuery.include = [
-        {
-          model: User,
-          as: "user",
-          attributes: ["id"],
-          where: {
-            [Op.or]: [
-              { name: { [Op.like]: `%${search}%` } },
-              { email: { [Op.like]: `%${search}%` } },
-              { phone: { [Op.like]: `%${search}%` } },
-            ],
-          },
-        },
-      ];
-    } else {
-      // Always include user for sorting
-      staffQuery.include = [
+      include: [
         {
           model: User,
           as: "user",
           attributes: ["id", "name"],
         },
-      ];
+      ],
+    };
+
+    if (isAvailable === "true" || isAvailable === "false") {
+      staffQuery.where.is_available = isAvailable === "true";
     }
 
-    // Add services filter if provided
+    if (minCommission || maxCommission) {
+      staffQuery.where.commission_percentage = {};
+      if (minCommission) staffQuery.where.commission_percentage[Op.gte] = parseFloat(minCommission);
+      if (maxCommission) staffQuery.where.commission_percentage[Op.lte] = parseFloat(maxCommission);
+    }
+
+    if (search) {
+      staffQuery.include[0].attributes.push("email", "phone");
+      staffQuery.include[0].where = {
+        [Op.or]: [
+          { name: { [Op.like]: `%${search}%` } },
+          { email: { [Op.like]: `%${search}%` } },
+          { phone: { [Op.like]: `%${search}%` } },
+        ],
+      };
+    }
+
     if (services && services.split(",").length > 0) {
       const serviceIds = services.split(",");
-
-      // Join with services as before
       staffQuery.include.push({
         model: Service,
         as: "services",
         attributes: ["id"],
-        where: {
-          id: {
-            [Op.in]: serviceIds,
-          },
-        },
-        through: { attributes: [] }, // Don't include junction table
+        where: { id: { [Op.in]: serviceIds } },
+        through: { attributes: [] },
       });
-
-      // ------------------------------------------------------------------
-      // Ensure that the staff member supports *ALL* of the selected services
-      // and that we do not get duplicate staff rows when multiple services
-      // are requested.  We do this by grouping on the staff id and applying
-      // a HAVING clause that requires the count of distinct matched services
-      // to equal the number of serviceIds requested.
-      // ------------------------------------------------------------------
       staffQuery.group = ["Staff.id"];
-      // COUNT(DISTINCT `services`.`id`) must match serviceIds.length
       staffQuery.having = sequelize.where(
         fn("COUNT", fn("DISTINCT", col("services.id"))),
         serviceIds.length
       );
     }
 
-    // Add sorting
     if (sort) {
       const [field, direction] = sort.split("_");
-      if (field === "name") {
-        staffQuery.order = [
-          [
-            { model: User, as: "user" },
-            "name",
-            direction === "desc" ? "DESC" : "ASC",
-          ],
-        ];
-      } else {
-        staffQuery.order = [[field, direction === "desc" ? "DESC" : "ASC"]];
-      }
+      staffQuery.order = field === "name"
+        ? [[{ model: User, as: "user" }, "name", direction === "desc" ? "DESC" : "ASC"]]
+        : [[field, direction === "desc" ? "DESC" : "ASC"]];
     } else {
       staffQuery.order = [[{ model: User, as: "user" }, "name", "ASC"]];
     }
 
-    // Count total staff that match criteria
+    // --- Step 2: Count total staff ---
     let totalCount = 0;
     if (staffQuery.group) {
-      // When we have a group clause (e.g. when filtering by multiple
-      // services), we need to perform a separate grouped count.
       const groupedResult = await Staff.findAll({
         attributes: ["id"],
         where: staffQuery.where,
@@ -173,132 +119,63 @@ exports.getAllStaff = async (req, res) => {
       });
     }
 
-    console.log(`Total matching staff: ${totalCount}`);
-
-    // Calculate total pages
     const totalPages = Math.ceil(totalCount / limit);
+    if (totalPages > 0 && validPage > totalPages) validPage = 1;
 
-    // Adjust page number if it's beyond the available pages
-    if (totalPages > 0 && validPage > totalPages) {
-      console.log(
-        `Requested page ${validPage} exceeds total pages ${totalPages}, adjusting to page 1`
-      );
-      validPage = 1;
-    }
-
-    // Get paginated staff IDs
+    // --- Step 3: Paginated staff IDs ---
     const paginatedStaffIds = await Staff.findAll({
       ...staffQuery,
-      limit: limit,
+      limit,
       offset: (validPage - 1) * limit,
       distinct: true,
       subQuery: false,
     });
 
-    console.log(`STAFiDS=${JSON.stringify(paginatedStaffIds)}`);
-
-    // Step 2: Get full staff data for these IDs
+    // --- Step 4: Get full staff data ---
     let staffData = [];
     if (paginatedStaffIds.length > 0) {
       staffData = await Staff.findAll({
-        where: {
-          id: {
-            [Op.in]: paginatedStaffIds.map((s) => s.id),
-          },
-        },
+        where: { id: { [Op.in]: paginatedStaffIds.map((s) => s.id) } },
         include: [
-          {
-            model: User,
-            as: "user",
-            attributes: { exclude: ["password"] },
-          },
-          {
-            association: "services",
-          },
-          {
-            association: "workingHours",
-          },
+          { model: User, as: "user", attributes: { exclude: ["password"] } },
+          { association: "services" },
+          { association: "workingHours" },
         ],
         order: staffQuery.order,
       });
     }
 
-    console.log(`Retrieved ${staffData.length} full staff records`);
-
-    // Get breaks for all staff
-    const staffIds = staffData.map((staff) => staff.id);
+    // --- Step 5: Breaks ---
+    const staffIds = staffData.map((s) => s.id);
     const allBreaks = await Break.findAll({
-      where: {
-        staff_id: {
-          [Op.in]: staffIds,
-        },
-      },
+      where: { staff_id: { [Op.in]: staffIds } },
     });
-
-    // Group breaks by staff ID
-    const breaksByStaffId = allBreaks.reduce((acc, breakItem) => {
-      if (!acc[breakItem.staff_id]) {
-        acc[breakItem.staff_id] = [];
-      }
-      acc[breakItem.staff_id].push(breakItem);
+    const breaksByStaffId = allBreaks.reduce((acc, brk) => {
+      (acc[brk.staff_id] = acc[brk.staff_id] || []).push(brk);
       return acc;
     }, {});
 
-    // Get total appointments and earnings for each staff
-    // Note: using the staffIds already declared above
-
-    // Get appointment counts for all staff members in one query
+    // --- Step 6: Appointments & Earnings ---
     const appointmentCounts = await Appointment.findAll({
       attributes: ["staff_id", [fn("count", col("id")), "count"]],
-      where: {
-        staff_id: {
-          [Op.in]: staffIds,
-        },
-      },
+      where: { staff_id: { [Op.in]: staffIds } },
       group: ["staff_id"],
     });
-
-    // Calculate earnings per staff from invoice line items (services + products)
     const [serviceEarnings, productEarnings] = await Promise.all([
       InvoiceService.findAll({
-        attributes: [
-          "staff_id",
-          [fn("sum", col("InvoiceService.total")), "total"],
-        ],
-        where: {
-          staff_id: { [Op.in]: staffIds },
-        },
-        include: [
-          {
-            model: Invoice,
-            as: "invoice",
-            attributes: [],
-            where: { status: "paid" },
-          },
-        ],
+        attributes: ["staff_id", [fn("sum", col("InvoiceService.total")), "total"]],
+        where: { staff_id: { [Op.in]: staffIds } },
+        include: [{ model: Invoice, as: "invoice", attributes: [], where: { status: "paid" } }],
         group: ["staff_id"],
       }),
       InvoiceProduct.findAll({
-        attributes: [
-          "staff_id",
-          [fn("sum", col("InvoiceProduct.total")), "total"],
-        ],
-        where: {
-          staff_id: { [Op.in]: staffIds },
-        },
-        include: [
-          {
-            model: Invoice,
-            as: "invoice",
-            attributes: [],
-            where: { status: "paid" },
-          },
-        ],
+        attributes: ["staff_id", [fn("sum", col("InvoiceProduct.total")), "total"]],
+        where: { staff_id: { [Op.in]: staffIds } },
+        include: [{ model: Invoice, as: "invoice", attributes: [], where: { status: "paid" } }],
         group: ["staff_id"],
       }),
     ]);
 
-    // Merge earnings from services and products
     const earningsMap = {};
     const accumulate = (arr) => {
       arr.forEach((row) => {
@@ -310,56 +187,41 @@ exports.getAllStaff = async (req, res) => {
     accumulate(serviceEarnings);
     accumulate(productEarnings);
 
-    // Map counts and earnings to objects for easy lookup
     const appointmentsMap = appointmentCounts.reduce((acc, item) => {
       acc[item.staff_id] = parseInt(item.dataValues.count, 10);
       return acc;
     }, {});
 
-    // earningsMap already built above
-    function timeToSeconds(timeStr) {
-      // "HH:mm:ss" -> total seconds
-      const [h, m, s] = timeStr.split(":").map(Number);
-      return h * 3600 + m * 60 + s;
-    }
-    // Add breaks to staff data
-    const staff = staffData.map((staffMember) => {
-      console.log("staffMember", staffMember?.is_on_break);
-      const staffJson = staffMember.toJSON();
-      const staffBreaks = breaksByStaffId[staffMember.id] || [];
-      const now = moment.tz("America/Edmonton");
+    // --- Step 7: Attach computed fields ---
+    const now = moment.tz("America/Edmonton");
+    const staff = await Promise.all(
+      staffData.map(async (staffMember) => {
+        const staffJson = staffMember.toJSON();
+        const staffBreaks = breaksByStaffId[staffMember.id] || [];
 
-      const isOnBreak = staffBreaks.some((brk) => {
-        const today = now.format("YYYY-MM-DD"); // current date in IST
-        const start = moment.tz(
-          `${today} ${brk.start_time}`,
-          "YYYY-MM-DD HH:mm:ss",
-          "America/Edmonton"
-        );
-        const end = moment.tz(
-          `${today} ${brk.end_time}`,
-          "YYYY-MM-DD HH:mm:ss",
-          "America/Edmonton"
-        );
-        console.log("start, end", start, end);
-        return now.isBetween(start, end, null, "[)");
-      });
-      if (staffMember.is_on_break !== isOnBreak) {
-        staffMember.update({ is_on_break: false }, { transaction });
-        console.log(
-          `Updated isOnBreak to ${isOnBreak} for staff ID: ${staffMember.id}`
-        );
-      }
-      return {
-        ...staffJson,
-        breaks: breaksByStaffId[staffMember.id] || [],
-        isOnBreak: isOnBreak,
-        totalAppointments: appointmentsMap[staffMember.id] || 0,
-        totalEarnings: earningsMap[staffMember.id] || 0,
-      };
-    });
+        const isOnBreak = staffBreaks.some((brk) => {
+          const today = now.format("YYYY-MM-DD");
+          const start = moment.tz(`${today} ${brk.start_time}`, "YYYY-MM-DD HH:mm:ss", "America/Edmonton");
+          const end = moment.tz(`${today} ${brk.end_time}`, "YYYY-MM-DD HH:mm:ss", "America/Edmonton");
+          return now.isBetween(start, end, null, "[)");
+        });
 
-    // Prepare response data
+        // Update if status changed (no transaction)
+        if (staffMember.is_on_break !== isOnBreak) {
+          await staffMember.update({ is_on_break: isOnBreak });
+        }
+
+        return {
+          ...staffJson,
+          breaks: staffBreaks,
+          isOnBreak,
+          totalAppointments: appointmentsMap[staffMember.id] || 0,
+          totalEarnings: earningsMap[staffMember.id] || 0,
+        };
+      })
+    );
+
+    // --- Step 8: Response ---
     const responseData = {
       success: true,
       staff,
@@ -369,26 +231,17 @@ exports.getAllStaff = async (req, res) => {
       itemsPerPage: limit,
     };
 
-    // Include services data if requested
     if (includeServices === "true") {
-      // Get all services
-      const services = await Service.findAll({
-        order: [["name", "ASC"]],
-      });
-
-      // Add services to response
-      responseData.services = services;
+      responseData.services = await Service.findAll({ order: [["name", "ASC"]] });
     }
 
     return res.status(200).json(responseData);
   } catch (error) {
     console.error("Get staff error:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Internal server error",
-    });
+    return res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
+
 
 /**
  * Get staff member by ID

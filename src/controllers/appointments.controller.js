@@ -1561,6 +1561,12 @@ exports.getCalendarAppointments = async (req, res) => {
       }),
     ]);
 
+    // const breaklist = await Break.findAll({
+    //   // include: ["user"],
+    //   // where: { is_available: true },
+    //   // order: [["id", "ASC"]],
+    // });
+    // console.log("breaklist", breaklist);
     // Format the staff and services data
     const staff = staffList.map((staffMember) => ({
       id: staffMember.id,
@@ -1569,6 +1575,7 @@ exports.getCalendarAppointments = async (req, res) => {
       phone: staffMember.phone || "",
       position: staffMember.position || "",
       avatar: staffMember.avatar || null,
+    
     }));
 
     const services = servicesList.map((service) => ({
