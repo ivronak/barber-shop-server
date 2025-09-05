@@ -54,7 +54,7 @@ exports.getAllAppointments = async (req, res) => {
       offset: (parseInt(page) - 1) * parseInt(limit),
       include: [
         { association: "customer" },
-        { association: "staff", include: ["user"] },
+        { association: "staff", include: ["user", { association: "breaks" }] },
         { association: "appointmentServices", include: ["service"] },
       ],
     };
@@ -1543,7 +1543,7 @@ exports.getCalendarAppointments = async (req, res) => {
       ],
       include: [
         { association: "customer" },
-        { association: "staff", include: ["user"] },
+        { association: "staff", include: ["user",{association:'breaks'}] },
         { association: "appointmentServices", include: ["service"] },
       ],
     };
@@ -1575,7 +1575,6 @@ exports.getCalendarAppointments = async (req, res) => {
       phone: staffMember.phone || "",
       position: staffMember.position || "",
       avatar: staffMember.avatar || null,
-    
     }));
 
     const services = servicesList.map((service) => ({

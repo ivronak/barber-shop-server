@@ -369,6 +369,10 @@ const getServicesReport = async (req, res) => {
         [fn("sum", col("quantity")), "bookings"],
         [fn("sum", col("InvoiceService.total")), "revenue"],
         [fn("sum", col("InvoiceService.tip_amount")), "tips"],
+        [
+          fn("sum", col("InvoiceService.commission_amount")),
+          "total_service_commision",
+        ],
         // Allocate invoice-level discounts proportionally and avoid divide-by-zero
         [
           literal(
@@ -377,6 +381,12 @@ const getServicesReport = async (req, res) => {
           "discounts",
         ],
         [fn("avg", col("InvoiceService.price")), "avgPrice"],
+        [
+          literal(
+            "SUM(InvoiceService.commission_amount) + SUM(InvoiceService.tip_amount)"
+          ),
+          "total_payout",
+        ],
       ],
       include: [
         {
@@ -1017,7 +1027,7 @@ const getAdvancedRevenueMetrics = async (req, res) => {
             totaltCommision: totaltCommision,
             totalServices: totalServices,
             totalProduct: totalProduct,
-          },  
+          },
           daily: {
             average: currentDailyAverage,
             percentChange: parseFloat(dailyPercentChange.toFixed(1)),
@@ -1154,6 +1164,38 @@ const getAdvancedStaffMetrics = async (req, res) => {
               },
             ],
           })) || 0;
+        const tipFromCustomer =
+          (await InvoiceService.sum("tip_amount", {
+            where: { staff_id: staff.id },
+            include: [
+              {
+                model: Invoice,
+                as: "invoice",
+                attributes: [],
+                where: {
+                  date: { [Op.between]: [queryDateFrom, queryDateTo] },
+                  status: "paid",
+                },
+              },
+            ],
+          })) || 0;
+        const services = await InvoiceService.findAll({
+          attributes: ["service_name"],
+          where: { staff_id: staff.id },
+          include: [
+            {
+              model: Invoice,
+              as: "invoice",
+              attributes: [],
+              where: {
+                date: { [Op.between]: [queryDateFrom, queryDateTo] },
+                status: "paid",
+              },
+            },
+          ],
+          group: ["InvoiceService.service_name"], // group by service_name
+          raw: true,
+        });
 
         // Sum commission from product sales
         const commissionFromProducts =
@@ -1171,7 +1213,23 @@ const getAdvancedStaffMetrics = async (req, res) => {
               },
             ],
           })) || 0;
-
+        const products = await InvoiceProduct.findAll({
+          attributes: ["product_name"],
+          where: { staff_id: staff.id },
+          include: [
+            {
+              model: Invoice,
+              as: "invoice",
+              attributes: [],
+              where: {
+                date: { [Op.between]: [queryDateFrom, queryDateTo] },
+                status: "paid",
+              },
+            },
+          ],
+          group: ["InvoiceProduct.product_name"], // group by service_name
+          raw: true,
+        });
         // Total commission earned across all sources
         const commissionEarned =
           parseFloat(commissionFromServices) +
@@ -1334,6 +1392,13 @@ const getAdvancedStaffMetrics = async (req, res) => {
           commission: commissionEarned, // Retained for backward compatibility
           commissionFromServices: parseFloat(commissionFromServices),
           commissionFromProducts: parseFloat(commissionFromProducts),
+          tipFromCustomer: tipFromCustomer,
+          totalPayout:
+            parseFloat(commissionFromServices) +
+            parseFloat(commissionFromProducts) +
+            parseFloat(tipFromCustomer),
+          services,
+          products,
           utilization,
           topServices,
           // Include efficiency metrics

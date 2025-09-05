@@ -354,10 +354,7 @@ const createInvoice = async (req, res) => {
     let finalCustomerName = customer_name;
 
     if (is_new_customer && customer_details) {
-      console.log(
-        "Creating new customer with details:",
-        JSON.stringify(customer_details, null, 2)
-      );
+      
 
       try {
         // Check if customer with same phone already exists
@@ -367,9 +364,7 @@ const createInvoice = async (req, res) => {
           });
 
           if (existingCustomer) {
-            console.log(
-              "Customer with this phone already exists, using existing customer"
-            );
+            
             finalCustomerId = existingCustomer.id;
             finalCustomerName = existingCustomer.name;
           } else {
@@ -384,7 +379,7 @@ const createInvoice = async (req, res) => {
               notes: "",
             });
 
-            console.log("New customer created:", newCustomer.id);
+         
             finalCustomerId = newCustomer.id;
             finalCustomerName = newCustomer.name;
 
@@ -402,7 +397,7 @@ const createInvoice = async (req, res) => {
       } catch (error) {
         console.error("Error creating customer:", error);
         // Continue with the original customer_id as fallback
-        console.log("Using fallback customer_id due to error");
+        
       }
     }
 
@@ -428,14 +423,7 @@ const createInvoice = async (req, res) => {
         : Array.isArray(products)
         ? products
         : [];
-    console.log(
-      "Selected servicesList:",
-      JSON.stringify(servicesList, null, 2)
-    );
-    console.log(
-      "Selected productsList:",
-      JSON.stringify(productsList, null, 2)
-    );
+    
 
     // -------------------------------------------------------------
     // Validate product stock availability prior to invoice creation
@@ -1291,7 +1279,7 @@ const sendInvoice = async (req, res) => {
 
     // Here you would integrate with an email service like Nodemailer
     // This is just a placeholder for the actual email sending logic
-    console.log(`Sending invoice #${id} to ${invoice.customer.email}`);
+    
 
     // Log activity
     await ActivityLog.create({
