@@ -9,11 +9,11 @@ exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
     
-    
+    console.log(`Login attempt for email: ${email}`);
     
     // Validate input
     if (!email || !password) {
-      
+      console.log('Login failed: Email or password missing');
       return res.status(400).json({
         success: false,
         message: 'Email and password are required'
@@ -23,26 +23,26 @@ exports.login = async (req, res) => {
     // Find user
     const user = await User.findOne({ where: { email } });
     if (!user) {
-      
+      console.log(`Login failed: No user found with email ${email}`);
       return res.status(401).json({
         success: false,
         message: 'Invalid credentials'
       });
     }
     
-    
+    console.log(`User found: ${user.name}, Role: ${user.role}, ID: ${user.id}`);
     
     // Check password
     const isPasswordValid = await user.checkPassword(password);
     if (!isPasswordValid) {
-      
+      console.log(`Login failed: Invalid password for ${email}`);
       return res.status(401).json({
         success: false,
         message: 'Invalid credentials'
       });
     }
     
-    
+    console.log(`Password validated for ${email}`);
     
     // If user is staff, include staff details
     let staffDetails = null;
@@ -52,9 +52,9 @@ exports.login = async (req, res) => {
       staffDetails = await Staff.findOne({ where: { user_id: user.id } });
       
       if (staffDetails) {
-        
+        console.log(`Staff details found for user ID: ${user.id}, staff ID: ${staffDetails.id}`);
       } else {
-        
+        console.log(`No staff record found for user ID: ${user.id}`);
         
         // Create staff record if it doesn't exist (default to active)
         staffDetails = await Staff.create({
@@ -64,12 +64,12 @@ exports.login = async (req, res) => {
           is_available: true
         });
         
-        
+        console.log(`Created staff record with ID: ${staffDetails.id}`);
       }
 
       // Prevent login if staff account is inactive
       if (staffDetails && staffDetails.is_available === false) {
-        
+        console.log(`Login blocked: Staff ID ${staffDetails.id} is inactive`);
         return res.status(403).json({
           success: false,
           message: 'Your account is inactive. Please contact the administrator.'
@@ -96,7 +96,7 @@ exports.login = async (req, res) => {
       details: `User logged in from ${req.ip}`
     });
     
-    
+    console.log(`Login successful for ${email}`);
     
     // Return token and user info
     return res.status(200).json({

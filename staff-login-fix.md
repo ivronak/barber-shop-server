@@ -118,7 +118,7 @@ login: async (email, password) => {
     // If staff user but no staff details, try to fetch them
     if (user.role === 'staff' && !user.staff) {
       try {
-        
+        console.log('Staff user detected but no staff details, fetching profile...');
         const profileUser = await getCurrentUser();
         set({ 
           isAuthenticated: true, 
@@ -149,10 +149,10 @@ login: async (email, password) => {
 const onSubmit = async (values: z.infer<typeof formSchema>) => {
   try {
     setIsLoading(true);
-    
+    console.log('Attempting login with:', values.email);
     await login(values.email, values.password);
     
-    
+    console.log('Login successful, user role:', userRole);
     
     toast({
       title: 'Success',

@@ -9,14 +9,14 @@ let breakId = null;
 // Login function
 const login = async () => {
   try {
-    
+    console.log('Logging in as admin...');
     const response = await axios.post(`${API_URL}/auth/login`, {
       email: 'admin@example.com',
       password: 'admin123'
     });
     
     token = response.data.token;
-    
+    console.log('Login successful');
     return token;
   } catch (error) {
     console.error('Login error:', error.response?.data || error.message);
@@ -27,14 +27,14 @@ const login = async () => {
 // Get staff list
 const getStaffList = async () => {
   try {
-    
+    console.log('Getting staff list...');
     const response = await axios.get(`${API_URL}/staff`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     
     if (response.data.staff && response.data.staff.length > 0) {
       staffId = response.data.staff[0].id;
-      
+      console.log(`Found staff ID: ${staffId}`);
       return staffId;
     } else {
       console.error('No staff found');
@@ -49,12 +49,12 @@ const getStaffList = async () => {
 // Get staff breaks
 const getStaffBreaks = async () => {
   try {
-    
+    console.log(`Getting breaks for staff ID: ${staffId}...`);
     const response = await axios.get(`${API_URL}/staff/${staffId}/breaks`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     
-    
+    console.log('Staff breaks:', JSON.stringify(response.data, null, 2));
     return response.data.breaks;
   } catch (error) {
     console.error('Get staff breaks error:', error.response?.data || error.message);
@@ -65,7 +65,7 @@ const getStaffBreaks = async () => {
 // Create staff break
 const createStaffBreak = async () => {
   try {
-    
+    console.log(`Creating break for staff ID: ${staffId}...`);
     const breakData = {
       name: 'Lunch Break',
       start_time: '12:00:00',
@@ -78,8 +78,8 @@ const createStaffBreak = async () => {
     });
     
     breakId = response.data.break.id;
-    
-    
+    console.log(`Created break ID: ${breakId}`);
+    console.log('Break data:', JSON.stringify(response.data, null, 2));
     return response.data;
   } catch (error) {
     console.error('Create staff break error:', error.response?.data || error.message);
@@ -90,7 +90,7 @@ const createStaffBreak = async () => {
 // Update staff break
 const updateStaffBreak = async () => {
   try {
-    
+    console.log(`Updating break ID: ${breakId}...`);
     const updateData = {
       name: 'Extended Lunch Break',
       start_time: '12:00:00',
@@ -102,7 +102,7 @@ const updateStaffBreak = async () => {
       headers: { Authorization: `Bearer ${token}` }
     });
     
-    
+    console.log('Updated break data:', JSON.stringify(response.data, null, 2));
     return response.data;
   } catch (error) {
     console.error('Update staff break error:', error.response?.data || error.message);
@@ -113,12 +113,12 @@ const updateStaffBreak = async () => {
 // Delete staff break
 const deleteStaffBreak = async () => {
   try {
-    
+    console.log(`Deleting break ID: ${breakId}...`);
     const response = await axios.delete(`${API_URL}/staff/${staffId}/breaks/${breakId}`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     
-    
+    console.log('Delete response:', JSON.stringify(response.data, null, 2));
     return response.data;
   } catch (error) {
     console.error('Delete staff break error:', error.response?.data || error.message);
@@ -129,7 +129,7 @@ const deleteStaffBreak = async () => {
 // Update staff working hours with breaks
 const updateStaffWorkingHours = async () => {
   try {
-    
+    console.log(`Updating working hours for staff ID: ${staffId}...`);
     const workingHoursData = {
       workingHours: [
         {
@@ -165,7 +165,7 @@ const updateStaffWorkingHours = async () => {
       headers: { Authorization: `Bearer ${token}` }
     });
     
-    
+    console.log('Updated working hours response:', JSON.stringify(response.data, null, 2));
     return response.data;
   } catch (error) {
     console.error('Update working hours error:', error.response?.data || error.message);
@@ -176,12 +176,12 @@ const updateStaffWorkingHours = async () => {
 // Get staff details
 const getStaffDetails = async () => {
   try {
-    
+    console.log(`Getting details for staff ID: ${staffId}...`);
     const response = await axios.get(`${API_URL}/staff/${staffId}`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     
-    
+    console.log('Staff details:', JSON.stringify(response.data, null, 2));
     return response.data;
   } catch (error) {
     console.error('Get staff details error:', error.response?.data || error.message);
@@ -196,7 +196,7 @@ const runTests = async () => {
     await getStaffList();
     
     // Test individual break endpoints
-    
+    console.log('\n=== Testing individual break endpoints ===');
     await getStaffBreaks();
     await createStaffBreak();
     await getStaffBreaks();
@@ -206,11 +206,11 @@ const runTests = async () => {
     await getStaffBreaks();
     
     // Test working hours with breaks
-    
+    console.log('\n=== Testing working hours with breaks ===');
     await updateStaffWorkingHours();
     await getStaffDetails();
     
-    
+    console.log('\nAll tests completed successfully!');
   } catch (error) {
     console.error('Test error:', error);
   }

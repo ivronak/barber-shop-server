@@ -305,7 +305,7 @@ async function testStaffWorkingHours() {
 // Run the test function
 (async () => {
   try {
-    
+    console.log('Using standard development database configuration');
     const result = await testStaffWorkingHours();
     
     if (result.success) {

@@ -9,7 +9,7 @@ const { Break, BusinessHour } = require('./src/models');
 
 async function directUpdateBreaks() {
   try {
-    
+    console.log('Starting direct update of breaks...');
     
     // Map of day names to numeric values
     const dayToNumber = {
@@ -32,7 +32,7 @@ async function directUpdateBreaks() {
       
       if (dayNumber !== undefined) {
         businessHourMap[hour.id] = dayNumber;
-        
+        console.log(`Business hour ID ${hour.id} is for ${dayName} (day ${dayNumber})`);
       }
     }
     
@@ -54,21 +54,21 @@ async function directUpdateBreaks() {
       const affectedRows = result[0];
       updatedCount += affectedRows;
       
-      
+      console.log(`Updated ${affectedRows} breaks for business hour ID ${businessHourId} to day ${dayNumber}`);
     }
     
-    
+    console.log(`\nTotal breaks updated: ${updatedCount}`);
     
     // Verify the updates
     const remainingNullBreaks = await Break.count({
       where: { day_of_week: null }
     });
     
-    
+    console.log(`Remaining breaks with null day_of_week: ${remainingNullBreaks}`);
     
     if (remainingNullBreaks > 0) {
-      
-      
+      console.log('\nWarning: Some breaks still have null day_of_week values.');
+      console.log('These might be breaks without a business_hour_id or with invalid business_hour_id.');
       
       // Get details of remaining null breaks
       const nullBreaks = await Break.findAll({
@@ -76,9 +76,9 @@ async function directUpdateBreaks() {
         attributes: ['id', 'name', 'business_hour_id', 'staff_id']
       });
       
-      
+      console.log('\nBreaks with null day_of_week:');
       nullBreaks.forEach(breakItem => {
-        
+        console.log(`ID: ${breakItem.id}, Name: ${breakItem.name}, Business Hour ID: ${breakItem.business_hour_id}, Staff ID: ${breakItem.staff_id}`);
       });
     }
     
@@ -87,7 +87,7 @@ async function directUpdateBreaks() {
   } finally {
     // Close the database connection
     await Break.sequelize.close();
-    
+    console.log('Database connection closed');
   }
 }
 

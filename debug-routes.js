@@ -2,7 +2,7 @@ const express = require('express');
 const app = express();
 const shopClosuresRoutes = require('./src/routes/shopClosures.routes');
 
-
+console.log('ShopClosures routes stack:', shopClosuresRoutes.stack);
 
 // Check if the routes are properly defined
 const routes = shopClosuresRoutes.stack.map(layer => {
@@ -13,4 +13,4 @@ const routes = shopClosuresRoutes.stack.map(layer => {
   };
 });
 
- 
+console.log('Routes:', routes); 

@@ -56,7 +56,18 @@ exports.getAllCustomers = async (req, res) => {
       minVisits,
     } = req.query;
 
-   
+    console.log("Customer filter params received:", {
+      search,
+      sort,
+      page,
+      limit,
+      visitFrom,
+      visitTo,
+      minSpent,
+      maxSpent,
+      customerSince,
+      minVisits,
+    });
 
     // Prepare query options
     const queryOptions = {
@@ -87,9 +98,9 @@ exports.getAllCustomers = async (req, res) => {
             ...(queryOptions.where.last_visit || {}),
             [Op.between]: [visitFrom, visitTo],
           };
-          
+          console.log(`Applying date range filter: ${visitFrom} to ${visitTo}`);
         } else {
-          
+          console.log("Invalid date range values, skipping filter");
         }
       } catch (e) {
         console.error("Error parsing date range:", e);
@@ -106,9 +117,9 @@ exports.getAllCustomers = async (req, res) => {
           queryOptions.where.total_spent = {
             [Op.between]: [min, max],
           };
-          
+          console.log(`Applying spending range filter: ${min} to ${max}`);
         } else {
-          
+          console.log("Invalid spending range values, skipping filter");
         }
       } catch (e) {
         console.error("Error parsing spending range:", e);
@@ -124,7 +135,9 @@ exports.getAllCustomers = async (req, res) => {
             ...(queryOptions.where.created_at || {}),
             [Op.gte]: customerSince,
           };
-        
+          console.log(
+            `Applying customer since filter: created on or after ${customerSince}`
+          );
         }
       } catch (e) {
         console.error("Error parsing customerSince:", e);
@@ -140,18 +153,18 @@ exports.getAllCustomers = async (req, res) => {
             ...(queryOptions.where.visit_count || {}),
             [Op.gte]: minVisitsInt,
           };
-          
+          console.log(`Applying minimum visit count filter: ${minVisitsInt}`);
         }
       } catch (e) {
         console.error("Error parsing minVisits:", e);
       }
     }
 
-    
+    console.log("Final query options:", JSON.stringify(queryOptions, null, 2));
 
     // Add sorting if provided
     if (sort) {
-      
+      console.log("Raw sort parameter:", sort);
 
       // Validate sort parameter format
       if (typeof sort !== "string") {
@@ -172,7 +185,9 @@ exports.getAllCustomers = async (req, res) => {
         direction = "asc";
       }
 
-     
+      console.log(
+        `Parsed sort: field = "${field}", direction = "${direction}"`
+      );
 
       let orderField = "";
 
@@ -201,11 +216,15 @@ exports.getAllCustomers = async (req, res) => {
           break;
 
         default:
-         
+          console.log(
+            `Unknown sort field: "${field}", defaulting to created_at`
+          );
           orderField = "created_at"; // Default sort
       }
 
-    
+      console.log(
+        `Sorting by field: "${field}" mapped to database column: "${orderField}"`
+      );
       queryOptions.order = [
         [orderField, direction.toLowerCase() === "desc" ? "DESC" : "ASC"],
       ];

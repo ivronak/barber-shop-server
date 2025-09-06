@@ -24,8 +24,8 @@ const dateTo = now.toISOString().split('T')[0];
 // Test functions
 async function testRevenueReport() {
   try {
-    
-    
+    console.log('\n--- Testing Revenue Report API ---');
+    console.log(`GET ${API_URL}/reports/revenue?dateFrom=${dateFrom}&dateTo=${dateTo}&groupBy=day`);
     
     const response = await axios.get(
       `${API_URL}/reports/revenue?dateFrom=${dateFrom}&dateTo=${dateTo}&groupBy=day`,
@@ -33,10 +33,10 @@ async function testRevenueReport() {
     );
     
     if (response.data.success) {
-      
-      
+      console.log('✅ Revenue Report API Success!');
+      console.log('Sample data:', JSON.stringify(response.data.data, null, 2).slice(0, 200) + '...');
     } else {
-      
+      console.log('❌ Revenue Report API Failed:', response.data.message);
     }
     
     return response.data;
@@ -48,8 +48,8 @@ async function testRevenueReport() {
 
 async function testServicesReport() {
   try {
-    
-    
+    console.log('\n--- Testing Services Report API ---');
+    console.log(`GET ${API_URL}/reports/services?dateFrom=${dateFrom}&dateTo=${dateTo}&sort=revenue_desc`);
     
     const response = await axios.get(
       `${API_URL}/reports/services?dateFrom=${dateFrom}&dateTo=${dateTo}&sort=revenue_desc`,
@@ -57,10 +57,10 @@ async function testServicesReport() {
     );
     
     if (response.data.success) {
-      
-      
+      console.log('✅ Services Report API Success!');
+      console.log('Sample data:', JSON.stringify(response.data.data, null, 2).slice(0, 200) + '...');
     } else {
-      
+      console.log('❌ Services Report API Failed:', response.data.message);
     }
     
     return response.data;
@@ -72,8 +72,8 @@ async function testServicesReport() {
 
 async function testStaffReport() {
   try {
-    
-    
+    console.log('\n--- Testing Staff Report API ---');
+    console.log(`GET ${API_URL}/reports/staff?dateFrom=${dateFrom}&dateTo=${dateTo}&sort=revenue_desc`);
     
     const response = await axios.get(
       `${API_URL}/reports/staff?dateFrom=${dateFrom}&dateTo=${dateTo}&sort=revenue_desc`,
@@ -81,10 +81,10 @@ async function testStaffReport() {
     );
     
     if (response.data.success) {
-      
-      
+      console.log('✅ Staff Report API Success!');
+      console.log('Sample data:', JSON.stringify(response.data.data, null, 2).slice(0, 200) + '...');
     } else {
-      
+      console.log('❌ Staff Report API Failed:', response.data.message);
     }
     
     return response.data;
@@ -96,8 +96,8 @@ async function testStaffReport() {
 
 async function testTipsDiscountsReport() {
   try {
-    
-    
+    console.log('\n--- Testing Tips & Discounts Report API ---');
+    console.log(`GET ${API_URL}/reports/tips-discounts?dateFrom=${dateFrom}&dateTo=${dateTo}&groupBy=day`);
     
     const response = await axios.get(
       `${API_URL}/reports/tips-discounts?dateFrom=${dateFrom}&dateTo=${dateTo}&groupBy=day`,
@@ -105,10 +105,10 @@ async function testTipsDiscountsReport() {
     );
     
     if (response.data.success) {
-      
-      
+      console.log('✅ Tips & Discounts Report API Success!');
+      console.log('Sample data:', JSON.stringify(response.data.data, null, 2).slice(0, 200) + '...');
     } else {
-      
+      console.log('❌ Tips & Discounts Report API Failed:', response.data.message);
     }
     
     return response.data;
@@ -120,8 +120,8 @@ async function testTipsDiscountsReport() {
 
 async function testDashboardStats() {
   try {
-    
-    
+    console.log('\n--- Testing Dashboard Stats API ---');
+    console.log(`GET ${API_URL}/reports/dashboard?period=weekly`);
     
     const response = await axios.get(
       `${API_URL}/reports/dashboard?period=weekly`,
@@ -129,10 +129,10 @@ async function testDashboardStats() {
     );
     
     if (response.data.success) {
-      
-      
+      console.log('✅ Dashboard Stats API Success!');
+      console.log('Sample data:', JSON.stringify(response.data.data, null, 2).slice(0, 200) + '...');
     } else {
-      
+      console.log('❌ Dashboard Stats API Failed:', response.data.message);
     }
     
     return response.data;
@@ -144,11 +144,11 @@ async function testDashboardStats() {
 
 // Run tests
 async function runTests() {
-  
+  console.log('Starting Reports API Tests...');
   
   if (!AUTH_TOKEN) {
     console.error('❌ No AUTH_TOKEN provided in environment variables');
-    
+    console.log('Please set TEST_AUTH_TOKEN in your .env file');
     return;
   }
 
@@ -159,7 +159,7 @@ async function runTests() {
     await testStaffReport();
     await testTipsDiscountsReport();
     
-    
+    console.log('\n✅ All tests completed!');
   } catch (error) {
     console.error('\n❌ Test Error:', error.message);
   }

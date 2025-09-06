@@ -5,10 +5,10 @@ const env = process.env.NODE_ENV || 'development';
 // Get the database configuration
 let config;
 if (env === 'production' && process.env.VERCEL) {
-  
+  console.log('Using Vercel-optimized database configuration');
   config = require('./src/config/vercel-db.js');
 } else {
-  
+  console.log(`Using standard ${env} database configuration`);
   config = require('./src/config/database.js')[env];
 }
 
@@ -26,9 +26,9 @@ const sequelize = new Sequelize(
 
 async function fixForeignKeys() {
   try {
-    
+    console.log('Connecting to database...');
     await sequelize.authenticate();
-    
+    console.log('Connection established successfully.');
 
     // Get the constraint name for customer_id
     const [customerConstraints] = await sequelize.query(`
@@ -55,7 +55,7 @@ async function fixForeignKeys() {
 
     // Drop existing constraints
     for (const constraint of customerConstraints) {
-      
+      console.log(`Dropping constraint ${constraint.CONSTRAINT_NAME}...`);
       await sequelize.query(`
         ALTER TABLE reviews 
         DROP FOREIGN KEY ${constraint.CONSTRAINT_NAME}
@@ -63,7 +63,7 @@ async function fixForeignKeys() {
     }
 
     for (const constraint of staffConstraints) {
-      
+      console.log(`Dropping constraint ${constraint.CONSTRAINT_NAME}...`);
       await sequelize.query(`
         ALTER TABLE reviews 
         DROP FOREIGN KEY ${constraint.CONSTRAINT_NAME}
@@ -72,42 +72,42 @@ async function fixForeignKeys() {
 
     // Add customer_name and staff_name columns if they don't exist
     try {
-      
+      console.log('Adding customer_name column if it doesn\'t exist...');
       await sequelize.query(`
         ALTER TABLE reviews 
         ADD COLUMN IF NOT EXISTS customer_name VARCHAR(255) NULL 
         AFTER customer_id
       `);
     } catch (error) {
-      
+      console.log('Error adding customer_name column (might already exist):', error.message);
     }
 
     try {
-      
+      console.log('Adding staff_name column if it doesn\'t exist...');
       await sequelize.query(`
         ALTER TABLE reviews 
         ADD COLUMN IF NOT EXISTS staff_name VARCHAR(255) NULL 
         AFTER staff_id
       `);
     } catch (error) {
-      
+      console.log('Error adding staff_name column (might already exist):', error.message);
     }
 
     // Make customer_id and staff_id nullable
-    
+    console.log('Making customer_id nullable...');
     await sequelize.query(`
       ALTER TABLE reviews 
       MODIFY COLUMN customer_id VARCHAR(36) NULL
     `);
 
-    
+    console.log('Making staff_id nullable...');
     await sequelize.query(`
       ALTER TABLE reviews 
       MODIFY COLUMN staff_id VARCHAR(36) NULL
     `);
 
     // Re-add foreign key constraints with ON DELETE SET NULL
-    
+    console.log('Adding customer_id foreign key constraint...');
     await sequelize.query(`
       ALTER TABLE reviews 
       ADD CONSTRAINT reviews_customer_id_fkey
@@ -117,7 +117,7 @@ async function fixForeignKeys() {
       ON UPDATE CASCADE
     `);
 
-    
+    console.log('Adding staff_id foreign key constraint...');
     await sequelize.query(`
       ALTER TABLE reviews 
       ADD CONSTRAINT reviews_staff_id_fkey
@@ -127,7 +127,7 @@ async function fixForeignKeys() {
       ON UPDATE CASCADE
     `);
 
-    
+    console.log('Foreign key constraints fixed successfully!');
   } catch (error) {
     console.error('Error fixing foreign keys:', error);
   } finally {

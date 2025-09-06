@@ -9,19 +9,19 @@ let staffId = null;
 // Login function
 const login = async () => {
   try {
-    
+    console.log('Logging in as admin...');
     const response = await axios.post(`${API_URL}/auth/login`, {
       email: 'admin@barbershop.com',
       password: 'admin123'
     });
     
     token = response.data.token;
-    
+    console.log('Login successful');
     return token;
   } catch (error) {
     console.error('Login error:', error.response?.data || error.message);
     // Don't exit, just log the error
-    
+    console.log('Continuing with tests using a mock token for local development');
     token = 'mock-token';
     return token;
   }
@@ -30,26 +30,26 @@ const login = async () => {
 // Get staff list
 const getStaffList = async () => {
   try {
-    
+    console.log('Getting staff list...');
     const response = await axios.get(`${API_URL}/staff`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     
     if (response.data.staff && response.data.staff.length > 0) {
       staffId = response.data.staff[0].id;
-      
+      console.log(`Found staff ID: ${staffId}`);
       return staffId;
     } else {
       console.error('No staff found');
       // Use a mock staff ID for testing
-      
+      console.log('Using mock staff ID for testing');
       staffId = '1234-5678-9012-3456';
       return staffId;
     }
   } catch (error) {
     console.error('Get staff error:', error.response?.data || error.message);
     // Use a mock staff ID for testing
-    
+    console.log('Using mock staff ID for testing');
     staffId = '1234-5678-9012-3456';
     return staffId;
   }
@@ -58,7 +58,7 @@ const getStaffList = async () => {
 // Test updating staff working hours with different day of week formats
 const testUpdateStaffWorkingHours = async () => {
   try {
-    
+    console.log('\n===== Testing staff working hours update with different day of week formats =====');
     
     // Test data with different day of week formats
     const workingHoursData = {
@@ -99,40 +99,40 @@ const testUpdateStaffWorkingHours = async () => {
     };
     
     // For local testing, just log the data
-    
-    
+    console.log('Working hours data:');
+    console.log(JSON.stringify(workingHoursData, null, 2));
     
     let apiResult = null;
     try {
       // Try to make the API call if the API is running
-      
+      console.log(`\nUpdating working hours for staff ID: ${staffId}...`);
       const response = await axios.put(`${API_URL}/staff/${staffId}/availability`, workingHoursData, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
-      
-      
-      
+      console.log('Update response:', response.status);
+      console.log('Updated working hours:', response.data.workingHours.length);
+      console.log('Updated breaks:', response.data.breaks.length);
       
       // Verify the day of week values in the response
-      
+      console.log('\nVerifying working hours day of week values:');
       response.data.workingHours.forEach(hour => {
-        
+        console.log(`- ${hour.day_of_week} (${typeof hour.day_of_week})`);
       });
       
-      
+      console.log('\nVerifying breaks day of week values:');
       response.data.breaks.forEach(breakItem => {
-        
+        console.log(`- ${breakItem.day_of_week} (${typeof breakItem.day_of_week})`);
       });
       
       apiResult = response.data;
     } catch (error) {
       console.error('\nAPI error:', error.message);
-      
+      console.log('This is expected during local testing without a running API server');
     }
     
     // Always simulate the response for local testing
-    
+    console.log('\nSimulating local day of week conversion:');
     
     // Simulate working hours conversion (string format expected)
     const simulatedWorkingHours = workingHoursData.workingHours.map(hour => {
@@ -157,14 +157,14 @@ const testUpdateStaffWorkingHours = async () => {
       return { ...breakItem, day_of_week: dayOfWeek };
     });
     
-    
+    console.log('\nSimulated working hours day of week values (should be strings):');
     simulatedWorkingHours.forEach(hour => {
-      
+      console.log(`- ${hour.day_of_week} (${typeof hour.day_of_week})`);
     });
     
-    
+    console.log('\nSimulated breaks day of week values (should be numbers):');
     simulatedBreaks.forEach(breakItem => {
-      
+      console.log(`- ${breakItem.day_of_week} (${typeof breakItem.day_of_week})`);
     });
     
     // Verify the conversions are correct
@@ -179,9 +179,9 @@ const testUpdateStaffWorkingHours = async () => {
       breakItem.day_of_week <= 6
     );
     
-    
-    
-    
+    console.log('\nVerification results:');
+    console.log(`- Working hours day of week conversion: ${workingHoursCorrect ? 'CORRECT ✅' : 'INCORRECT ❌'}`);
+    console.log(`- Breaks day of week conversion: ${breaksCorrect ? 'CORRECT ✅' : 'INCORRECT ❌'}`);
     
     return {
       apiResult,
@@ -205,14 +205,14 @@ const runTests = async () => {
     // Test staff working hours update
     const result = await testUpdateStaffWorkingHours();
     
-    
+    console.log('\nAll tests completed!');
     
     // Exit with appropriate code
     if (result && result.workingHoursCorrect && result.breaksCorrect) {
-      
+      console.log('\n✅ All day of week conversions are correct!');
       process.exit(0);
     } else {
-      
+      console.log('\n❌ Some day of week conversions are incorrect!');
       process.exit(1);
     }
   } catch (error) {

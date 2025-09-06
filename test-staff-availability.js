@@ -209,7 +209,7 @@ async function testStaffAvailabilityCheck() {
 // Run the test function
 (async () => {
   try {
-    
+    console.log('Using standard development database configuration');
     const result = await testStaffAvailabilityCheck();
     
     if (result.success) {

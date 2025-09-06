@@ -7,7 +7,7 @@ require('dotenv').config();
 const mysql2 = require('mysql2');
 
 // Load the mysql2 module explicitly to ensure it's included in the bundle
-
+console.log('MySQL2 module loaded for Vercel deployment');
 
 const config = {
   username: process.env.DB_USERNAME,
@@ -34,8 +34,8 @@ const config = {
   // Print debugging info about the connection
   hooks: {
     afterConnect: (connection, config) => {
-      
-      
+      console.log(`Connected to database: ${process.env.DB_NAME} on host: ${process.env.DB_HOST}`);
+      console.log('Connection ID:', connection.threadId);
     }
   }
 };

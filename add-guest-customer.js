@@ -7,7 +7,7 @@ const mysql = require('mysql2/promise');
 require('dotenv').config();
 
 async function addGuestCustomer() {
-  
+  console.log('Starting to add guest customer...');
   
   // Create a MySQL connection
   const connection = await mysql.createConnection({
@@ -25,7 +25,7 @@ async function addGuestCustomer() {
     );
     
     if (existingRows.length > 0) {
-      
+      console.log('Guest customer already exists, skipping insertion.');
       return;
     }
     
@@ -37,14 +37,14 @@ async function addGuestCustomer() {
        ('guest-user', 'Guest Customer', NULL, '0000000000', 0, 0.00, NULL, 'Default guest customer for walk-in transactions', NOW(), NOW())`
     );
     
-    
-    
+    console.log('Guest customer added successfully.');
+    console.log('Affected rows:', result.affectedRows);
     
   } catch (error) {
     console.error('Error adding guest customer:', error);
   } finally {
     await connection.end();
-    
+    console.log('Database connection closed.');
   }
 }
 

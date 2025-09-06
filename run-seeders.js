@@ -6,7 +6,7 @@ const { Umzug, SequelizeStorage } = require('umzug');
 
 // This script runs seeders in production or development environments
 async function runSeeders() {
-  
+  console.log('Starting to run seeders...');
 
   // Load environment variables
   require('dotenv').config();
@@ -27,7 +27,7 @@ async function runSeeders() {
   // Test the connection
   try {
     await sequelize.authenticate();
-    
+    console.log('Database connection established successfully.');
   } catch (error) {
     console.error('Unable to connect to the database:', error);
     process.exit(1);
@@ -35,7 +35,7 @@ async function runSeeders() {
   
   // First, ensure guest customer exists using direct SQL
   try {
-    
+    console.log('Ensuring guest customer exists...');
     const queryInterface = sequelize.getQueryInterface();
     
     // Check if guest customer already exists
@@ -51,9 +51,9 @@ async function runSeeders() {
          VALUES 
          ('guest-user', 'Guest Customer', NULL, '0000000000', 0, 0.00, NULL, 'Default guest customer for walk-in transactions', NOW(), NOW())`
       );
-      
+      console.log('Guest customer added successfully.');
     } else {
-      
+      console.log('Guest customer already exists, skipping.');
     }
   } catch (error) {
     console.error('Error ensuring guest customer exists:', error);
@@ -73,9 +73,9 @@ async function runSeeders() {
   // Run seeders
   try {
     const executed = await umzug.up();
-    
+    console.log(`Executed ${executed.length} seeders`);
     executed.forEach(seeder => {
-      
+      console.log(`- ${seeder.name}`);
     });
   } catch (error) {
     console.error('Error running seeders:', error);
@@ -84,7 +84,7 @@ async function runSeeders() {
 
   // Close connection
   await sequelize.close();
-  
+  console.log('Seeding completed.');
 }
 
 // Run the function

@@ -33,11 +33,11 @@ const numberToDayMap = {
 
 async function fixDayOffsetBug() {
   try {
-    
+    console.log('Starting day offset bug fix...');
     
     // Get all breaks
     const allBreaks = await Break.findAll();
-    
+    console.log(`Found ${allBreaks.length} total breaks in the database`);
     
     // Track updates
     const updates = [];
@@ -47,12 +47,12 @@ async function fixDayOffsetBug() {
       const currentDay = breakItem.day_of_week;
       const isAdminBreak = breakItem.staff_id === null;
       
-      
-      
+      console.log(`\nChecking Break ID ${breakItem.id} (${isAdminBreak ? 'Admin Break' : 'Staff Break'})`);
+      console.log(`Current day_of_week: ${currentDay} (${numberToDayMap[currentDay] || 'unknown'})`);
       
       // Skip if day_of_week is null
       if (currentDay === null || currentDay === undefined) {
-        
+        console.log('Skipping break with null day_of_week');
         continue;
       }
       
@@ -64,16 +64,16 @@ async function fixDayOffsetBug() {
           const dayString = businessHour.day_of_week.toLowerCase();
           const correctDayNumber = dayToNumberMap[dayString];
           
-          
+          console.log(`Associated business hour day: ${dayString} (${correctDayNumber})`);
           
           // Check if the break day is one day ahead (the specific issue we're addressing)
           const isOffByOne = (currentDay === correctDayNumber + 1) || 
                              (correctDayNumber === 6 && currentDay === 0); // Handle Saturday->Sunday wrap
           
-          
+          console.log(`Is off-by-one error: ${isOffByOne}`);
           
           if (isOffByOne) {
-            
+            console.log(`Fixing: ${currentDay} (${numberToDayMap[currentDay]}) -> ${correctDayNumber} (${numberToDayMap[correctDayNumber]})`);
             
             updates.push({
               breakId: breakItem.id,
@@ -91,7 +91,7 @@ async function fixDayOffsetBug() {
             );
           }
         } else {
-          
+          console.log(`Business hour ${breakItem.business_hour_id} not found for break ${breakItem.id}`);
         }
       } 
       // For staff breaks, apply a general fix if the day seems off by one
@@ -100,7 +100,7 @@ async function fixDayOffsetBug() {
         // This addresses the specific issue reported
         const possibleCorrectDay = currentDay > 0 ? currentDay - 1 : 6; // Handle Sunday (0) wrapping to Saturday (6)
         
-        
+        console.log(`Considering fix: ${currentDay} (${numberToDayMap[currentDay]}) -> ${possibleCorrectDay} (${numberToDayMap[possibleCorrectDay]})`);
         
         // Additional check: Only apply if breaking days are in specific pattern
         // Monday (1) showing as Tuesday (2) - This is the specific reported issue
@@ -112,7 +112,7 @@ async function fixDayOffsetBug() {
             (currentDay === 0 && possibleCorrectDay === 6) ||
             (currentDay === 1 && possibleCorrectDay === 0)) {
           
-          
+          console.log(`Applying fix for off-by-one error`);
           
           updates.push({
             breakId: breakItem.id,
@@ -129,21 +129,21 @@ async function fixDayOffsetBug() {
             { where: { id: breakItem.id } }
           );
         } else {
-          
+          console.log('No fix applied - not matching the specific off-by-one pattern');
         }
       }
     }
     
     // Show summary
-    
+    console.log('\n=== UPDATE SUMMARY ===');
     if (updates.length === 0) {
-      
+      console.log('No breaks needed fixing. The off-by-one error was not detected in any break records.');
     } else {
-      
+      console.log(`Fixed ${updates.length} breaks with off-by-one day_of_week errors:`);
       updates.forEach(update => {
-        
+        console.log(`- Break ID ${update.breakId} (${update.type}): Changed from ${update.oldValue} (${update.oldDay}) to ${update.newValue} (${update.newDay})`);
       });
-      
+      console.log('\nThe issue where setting Monday off shows Tuesday off should now be resolved.');
     }
     
   } catch (error) {

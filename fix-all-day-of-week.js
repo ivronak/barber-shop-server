@@ -36,24 +36,24 @@ const numberToDayMap = {
 
 async function fixAllDayOfWeekValues() {
   try {
-    
-    
+    console.log('Starting comprehensive day-of-week mismatch fix...');
+    console.log('This script specifically targets the off-by-one error in day of week values');
     
     // Track total updates
     let totalUpdates = 0;
     
     // PART 1: Fix admin breaks (associated with business hours)
-    
+    console.log('\n=== PART 1: Fixing Admin Breaks ===');
     
     // Get all business hours
     const businessHours = await BusinessHour.findAll();
-    
+    console.log(`Found ${businessHours.length} business hours entries`);
     
     // Get all admin breaks (staff_id is null)
     const adminBreaks = await Break.findAll({
       where: { staff_id: null }
     });
-    
+    console.log(`Found ${adminBreaks.length} admin breaks`);
     
     const adminUpdates = [];
     
@@ -61,19 +61,19 @@ async function fixAllDayOfWeekValues() {
       const dayString = businessHour.day_of_week.toLowerCase();
       const correctDayNumber = dayToNumberMap[dayString];
       
-      
+      console.log(`\nBusiness hour for ${dayString} (ID: ${businessHour.id}) should have breaks with day_of_week = ${correctDayNumber}`);
       
       // Find breaks associated with this business hour
       const relatedBreaks = adminBreaks.filter(b => b.business_hour_id === businessHour.id);
       
-      
+      console.log(`Found ${relatedBreaks.length} breaks for ${dayString}`);
       
       for (const breakItem of relatedBreaks) {
         const currentDay = breakItem.day_of_week;
         
         // Check if the day is null or undefined
         if (currentDay === null || currentDay === undefined) {
-          
+          console.log(`- Break ID ${breakItem.id}: Current day_of_week is null/undefined, setting to ${correctDayNumber} (${dayString})`);
           
           adminUpdates.push({
             breakId: breakItem.id,
@@ -94,12 +94,12 @@ async function fixAllDayOfWeekValues() {
         const isOffByOne = (currentDay === correctDayNumber + 1) || 
                            (correctDayNumber === 6 && currentDay === 0); // Handle Saturday (6) -> Sunday (0) wrap
         
-        
-        
-        
+        console.log(`- Break ID ${breakItem.id}: Current day_of_week = ${currentDay} (${numberToDayMap[currentDay] || 'unknown'})`);
+        console.log(`  Correct day should be ${correctDayNumber} (${dayString})`);
+        console.log(`  Is off-by-one error: ${isOffByOne}`);
         
         if (currentDay !== correctDayNumber) {
-          
+          console.log(`  -> Updating day_of_week from ${currentDay} to ${correctDayNumber}`);
           
           adminUpdates.push({
             breakId: breakItem.id,
@@ -120,30 +120,30 @@ async function fixAllDayOfWeekValues() {
     totalUpdates += adminUpdates.length;
     
     // PART 2: Fix staff breaks
-    
+    console.log('\n=== PART 2: Fixing Staff Breaks ===');
     
     // Get all staff
     const staffMembers = await Staff.findAll();
-    
+    console.log(`Found ${staffMembers.length} staff members`);
     
     const staffUpdates = [];
     
     for (const staff of staffMembers) {
-      
+      console.log(`\nChecking breaks for staff ID: ${staff.id}`);
       
       // Get staff working hours
       const workingHours = await WorkingHour.findAll({
         where: { staff_id: staff.id, is_break: false }
       });
       
-      
+      console.log(`Found ${workingHours.length} working hour entries for this staff`);
       
       // Get staff breaks
       const staffBreaks = await Break.findAll({
         where: { staff_id: staff.id }
       });
       
-      
+      console.log(`Found ${staffBreaks.length} break entries for this staff`);
       
       if (staffBreaks.length === 0) {
         continue; // Skip to next staff member
@@ -155,7 +155,7 @@ async function fixAllDayOfWeekValues() {
         const dayString = workingHour.day_of_week.toLowerCase();
         const correctDayNumber = dayToNumberMap[dayString];
         staffDayMap.set(dayString, correctDayNumber);
-        
+        console.log(`Staff works on ${dayString} (day number: ${correctDayNumber})`);
       }
       
       // Check and update each break's day_of_week
@@ -164,7 +164,7 @@ async function fixAllDayOfWeekValues() {
         
         // If break has no day_of_week value, try to infer it
         if (currentDay === null || currentDay === undefined) {
-          
+          console.log(`- Break ID ${breakItem.id} has null day_of_week, attempting to infer from associated working hours`);
           
           // Use the first available working day (simplification)
           let inferredDay = null;
@@ -173,7 +173,7 @@ async function fixAllDayOfWeekValues() {
           if (staffDayMap.size > 0) {
             const firstWorkingDayPair = Array.from(staffDayMap.entries())[0];
             inferredDay = firstWorkingDayPair[1];
-            
+            console.log(`  -> Inferred day_of_week = ${inferredDay} (${firstWorkingDayPair[0]})`);
             foundMatch = true;
           }
           
@@ -190,7 +190,7 @@ async function fixAllDayOfWeekValues() {
               { where: { id: breakItem.id } }
             );
           } else {
-            
+            console.log(`  -> Could not infer day_of_week for break ID ${breakItem.id}, no working hours found`);
           }
           continue;
         }
@@ -218,7 +218,7 @@ async function fixAllDayOfWeekValues() {
             // This is likely an off-by-one error
             correctDayNumber = dayBefore;
             needsUpdate = true;
-            
+            console.log(`- Break ID ${breakItem.id}: Detected off-by-one error, day ${currentDay} (${currentDayName}) should be ${correctDayNumber} (${dayBeforeName})`);
           }
         }
         
@@ -236,7 +236,7 @@ async function fixAllDayOfWeekValues() {
             { where: { id: breakItem.id } }
           );
         } else {
-          
+          console.log(`- Break ID ${breakItem.id}: Current day_of_week = ${currentDay} (${currentDayName}), no update needed`);
         }
       }
     }
@@ -245,15 +245,15 @@ async function fixAllDayOfWeekValues() {
     totalUpdates += staffUpdates.length;
     
     // Final Summary
-    
-    
-    
-    
+    console.log('\n=== FINAL UPDATE SUMMARY ===');
+    console.log(`Total admin breaks updated: ${adminUpdates.length}`);
+    console.log(`Total staff breaks updated: ${staffUpdates.length}`);
+    console.log(`Total updates: ${totalUpdates}`);
     
     if (totalUpdates === 0) {
-      
+      console.log('\nNo breaks needed updating. All day_of_week values are already correct.');
     } else {
-      
+      console.log('\nFix completed successfully! The day-of-week mismatch should now be resolved.');
     }
     
   } catch (error) {

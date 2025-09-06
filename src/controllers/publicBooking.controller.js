@@ -156,14 +156,14 @@ const getBookingStaff = async (req, res) => {
  */
 const getBookingSlots = async (req, res) => {
   try {
-    
-    
+    console.log(`[SLOTS] ========== STARTING TIME SLOT GENERATION ==========`);
+    console.log(`[SLOTS] Request query params:`, req.query);
     
     const { date, service_id, staff_id } = req.query;
-    
+    console.log(`[SLOTS] Processing request for date=${date}, service_id=${service_id}, staff_id=${staff_id}`);
 
     if (!date || !service_id || !staff_id) {
-      
+      console.log(`[SLOTS] Missing required parameters`);
       return res.status(400).json({
         success: false,
         message: 'Date, service ID, and staff ID are required',
@@ -177,12 +177,12 @@ const getBookingSlots = async (req, res) => {
     if (service_id.includes(',')) {
       // Handle multiple services
       const serviceIds = service_id.split(',');
-      
+      console.log(`[SLOTS] Multiple services requested: ${serviceIds.length} services`);
       
       for (const id of serviceIds) {
         const service = await Service.findByPk(id);
         if (!service) {
-          
+          console.log(`[SLOTS] Service not found with ID: ${id}`);
           return res.status(404).json({
             success: false,
             message: `Service with ID ${id} not found`,
@@ -191,13 +191,13 @@ const getBookingSlots = async (req, res) => {
         services.push(service);
         totalDuration += service.duration;
       }
-      
+      console.log(`[SLOTS] Total duration for all services: ${totalDuration} minutes`);
     } else {
       // Handle single service (existing logic)
-      
+      console.log(`[SLOTS] Fetching service with ID: ${service_id}`);
       const service = await Service.findByPk(service_id);
       if (!service) {
-        
+        console.log(`[SLOTS] Service not found with ID: ${service_id}`);
         return res.status(404).json({
           success: false,
           message: 'Service not found',
@@ -205,46 +205,46 @@ const getBookingSlots = async (req, res) => {
       }
       services.push(service);
       totalDuration = service.duration;
-      
+      console.log(`[SLOTS] Service found: ${service.name}, duration=${totalDuration} minutes`);
     }
 
     // Get the staff details
-    
+    console.log(`[SLOTS] Fetching staff with ID: ${staff_id}`);
     const staff = await Staff.findByPk(staff_id, {
       include: [{ model: User, as: 'user' }]
     });
 
     if (!staff) {
-      
+      console.log(`[SLOTS] Staff not found with ID: ${staff_id}`);
       return res.status(404).json({
         success: false,
         message: 'Staff not found',
       });
     }
-    
+    console.log(`[SLOTS] Staff found: ${staff.user.name}`);
 
     // Get business settings for timezone and slot duration
-    
+    console.log(`[SLOTS] Fetching business settings`);
     const businessSettings = await BusinessSetting.findOne();
     const businessTimezone = businessSettings?.timezone || 'UTC';
     const slotDuration = businessSettings?.slot_duration || 30;
-    
+    console.log(`[SLOTS] Business settings: timezone=${businessTimezone}, slotDuration=${slotDuration}`);
 
     // Get the day of week using the consistent helper function
-    
+    console.log(`[SLOTS] Calculating day of week for date: ${date}`);
     const { dayOfWeek, numericDayOfWeek } = getConsistentDayOfWeek(date);
     
-    
-    
+    console.log(`[SLOTS] Day of week result: ${dayOfWeek} (${numericDayOfWeek})`);
+    console.log(`[SLOTS] Booking request for date: ${date}, day: ${dayOfWeek}, numeric day: ${numericDayOfWeek}`);
     
     // Check for full day shop closure
-    
+    console.log(`[SLOTS] Checking for full day shop closure`);
     const shopClosure = await ShopClosure.findOne({
       where: { date, is_full_day: true }
     });
     
     if (shopClosure) {
-      
+      console.log(`[SLOTS] Full day shop closure found: ${shopClosure.reason || 'No reason provided'}`);
       return res.status(200).json({
         success: true,
         slots: [],
@@ -253,16 +253,16 @@ const getBookingSlots = async (req, res) => {
         message: `The shop is closed on this day: ${shopClosure.reason || 'Shop closure'}`,
       });
     }
-    
+    console.log(`[SLOTS] No full day shop closure found`);
 
     // Check business hours for this day
-    
+    console.log(`[SLOTS] Fetching business hours for day: ${dayOfWeek}`);
     const businessHours = await BusinessHour.findOne({
       where: { day_of_week: dayOfWeek }
     });
     
     if (!businessHours || !businessHours.open_time || !businessHours.close_time) {
-      
+      console.log(`[SLOTS] No business hours found for ${dayOfWeek} or missing open/close times`);
       return res.status(200).json({
         success: true,
         slots: [],
@@ -271,10 +271,10 @@ const getBookingSlots = async (req, res) => {
         message: 'The shop is not open on this day',
       });
     }
-    
+    console.log(`[SLOTS] Business hours: ${businessHours.open_time} - ${businessHours.close_time}`);
 
     // Check if the staff has working hours for this day
-    
+    console.log(`[SLOTS] Fetching working hours for staff ID: ${staff_id} and day: ${dayOfWeek}`);
     const staffWorkingHours = await WorkingHour.findAll({
       where: {
         staff_id: staff_id,
@@ -282,11 +282,11 @@ const getBookingSlots = async (req, res) => {
       }
     });
     
-    
+    console.log(`[SLOTS] Found ${staffWorkingHours.length} working hour records for staff ID: ${staff_id} on day ${dayOfWeek}`);
     
     // If no working hours are found for this staff member on this day, return appropriate message
     if (staffWorkingHours.length === 0) {
-      
+      console.log(`[SLOTS] Staff ${staff.user.name} is not available on ${dayOfWeek}`);
       return res.status(200).json({
         success: true,
         slots: [],
@@ -298,24 +298,24 @@ const getBookingSlots = async (req, res) => {
     
     // Log all staff working hours for debugging
     staffWorkingHours.forEach(workHour => {
-      
+      console.log(`[SLOTS] Working hour ID: ${workHour.id}, Time: ${workHour.start_time}-${workHour.end_time}, Day: ${workHour.day_of_week}`);
     });
 
     // Get partial closures for this date
-    
+    console.log(`[SLOTS] Fetching partial shop closures`);
     const partialClosures = await ShopClosure.findAll({
       where: { date, is_full_day: false }
     });
-    
+    console.log(`[SLOTS] Found ${partialClosures.length} partial closures for date ${date}`);
 
     // Get admin breaks for this day
-    
+    console.log(`[SLOTS] Fetching admin breaks for day ${dayOfWeek}`);
     let adminBreaks = [];
 
     try {
       // Get admin breaks for this specific day
       if (businessHours) {
-        
+        console.log(`[SLOTS] Fetching admin breaks for business hour ID: ${businessHours.id} (day: ${dayOfWeek})`);
         
         adminBreaks = await Break.findAll({
           where: {
@@ -325,11 +325,11 @@ const getBookingSlots = async (req, res) => {
           }
         });
         
-        
+        console.log(`[SLOTS] Found ${adminBreaks.length} admin breaks for day ${dayOfWeek}`);
         
         // Log all breaks for debugging
         adminBreaks.forEach(breakItem => {
-          
+          console.log(`[SLOTS] Admin break ID: ${breakItem.id}, Name: ${breakItem.name}, Time: ${breakItem.start_time}-${breakItem.end_time}, Day: ${breakItem.day_of_week}, Business Hour ID: ${breakItem.business_hour_id}`);
         });
       }
     } catch (error) {
@@ -339,7 +339,7 @@ const getBookingSlots = async (req, res) => {
     }
 
     // Get staff-specific breaks for this day
-    
+    console.log(`[SLOTS] Fetching staff-specific breaks for staff ID: ${staff_id} and day: ${dayOfWeek}`);
     let staffBreaks = [];
 
     try {
@@ -350,11 +350,11 @@ const getBookingSlots = async (req, res) => {
         }
       });
       
-      
+      console.log(`[SLOTS] Found ${staffBreaks.length} staff-specific breaks for staff ID: ${staff_id} on day ${dayOfWeek}`);
       
       // Log all staff breaks for debugging
       staffBreaks.forEach(breakItem => {
-        
+        console.log(`[SLOTS] Staff break ID: ${breakItem.id}, Name: ${breakItem.name}, Time: ${breakItem.start_time}-${breakItem.end_time}, Day: ${breakItem.day_of_week}, Staff ID: ${breakItem.staff_id}`);
       });
     } catch (error) {
       console.error('[SLOTS] Error fetching staff breaks:', error);
@@ -363,10 +363,10 @@ const getBookingSlots = async (req, res) => {
 
     // Combine admin and staff breaks
     const allBreaks = [...adminBreaks, ...staffBreaks];
-    
+    console.log(`[SLOTS] Combined ${adminBreaks.length} admin breaks and ${staffBreaks.length} staff breaks = ${allBreaks.length} total breaks`);
 
     // Get existing appointments for this date and staff
-    
+    console.log(`[SLOTS] Fetching existing appointments for date: ${date} and staff ID: ${staff_id}`);
     const existingAppointments = await Appointment.findAll({
       where: {
         date,
@@ -376,26 +376,26 @@ const getBookingSlots = async (req, res) => {
         }
       },
     });
-    
+    console.log(`[SLOTS] Found ${existingAppointments.length} existing appointments`);
 
     // Generate time slots using business hours
     const businessOpenTime = businessHours.open_time || '09:00';
     const businessCloseTime = businessHours.close_time || '18:00';
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    console.log(`[SLOTS] Calling generateTimeSlots with params:`);
+    console.log(`[SLOTS] - businessOpenTime: ${businessOpenTime}`);
+    console.log(`[SLOTS] - businessCloseTime: ${businessCloseTime}`);
+    console.log(`[SLOTS] - slotDuration: ${slotDuration}`);
+    console.log(`[SLOTS] - totalDuration: ${totalDuration}`);
+    console.log(`[SLOTS] - staffWorkingHours: ${staffWorkingHours.length} items`);
+    console.log(`[SLOTS] - breaks: ${allBreaks.length} items`);
+    console.log(`[SLOTS] - existingAppointments: ${existingAppointments.length} items`);
+    console.log(`[SLOTS] - partialClosures: ${partialClosures.length} items`);
+    console.log(`[SLOTS] - date: ${date}`);
+    console.log(`[SLOTS] - businessTimezone: ${businessTimezone}`);
     
     // Generate all possible time slots
-    
+    console.log(`[SLOTS] Generating time slots...`);
     const allSlots = generateTimeSlots(
       businessOpenTime,
       businessCloseTime,
@@ -412,7 +412,7 @@ const getBookingSlots = async (req, res) => {
     // Check if there are any available slots
     const totalSlots = allSlots.length;
     const availableSlots = allSlots.filter(slot => slot.available).length;
-    
+    console.log(`[SLOTS] Generated ${totalSlots} slots, ${availableSlots} available`);
     
     const hasAvailableSlots = availableSlots > 0;
     
@@ -422,8 +422,8 @@ const getBookingSlots = async (req, res) => {
       message = `No available time slots for ${staff.user.name} on the selected date.`;
     }
     
-    
-    
+    console.log(`[SLOTS] First few available slots:`, allSlots.filter(slot => slot.available).slice(0, 3));
+    console.log(`[SLOTS] ========== FINISHED TIME SLOT GENERATION ==========`);
     
     // Return appropriate response
     return res.status(200).json({
@@ -469,7 +469,7 @@ const createBooking = async (req, res) => {
 
     // Check if service_id contains multiple services
     const serviceIds = service_id.includes(',') ? service_id.split(',') : [service_id];
-    
+    console.log(`Booking with ${serviceIds.length} services:`, serviceIds);
     
     // Get service details and validate all services exist
     const services = [];
@@ -498,8 +498,8 @@ const createBooking = async (req, res) => {
     const endTime = new Date(startTime.getTime() + totalDuration * 60000);
     const endTimeStr = endTime.toTimeString().split(' ')[0].substring(0, 5);
     
-    
-    
+    console.log(`Booking request for ${date} at ${bookingTime} (${totalDuration} minutes total)`);
+    console.log(`Calculated end time: ${endTimeStr}`);
     
     // Check business hours for this day
     const { dayOfWeek } = getConsistentDayOfWeek(date);
@@ -582,7 +582,7 @@ const createBooking = async (req, res) => {
         (endTime > breakStart && endTime <= breakEnd) ||
         (startTime <= breakStart && endTime >= breakEnd)
       ) {
-        
+        console.log('Booking overlaps with admin break:', breakTime.name);
         return res.status(400).json({
           success: false,
           message: `Cannot book at this time. The shop is on break: ${breakTime.name}`

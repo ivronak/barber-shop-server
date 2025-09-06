@@ -37,7 +37,7 @@ exports.getAllStaff = async (req, res) => {
     const limit = 10;
     let validPage = Math.max(1, parseInt(page, 10) || 1);
 
-    
+    console.log(`Processing staff request: page=${validPage}, limit=${limit}`);
 
     // --- Step 1: Build staff query ---
     let staffQuery = {

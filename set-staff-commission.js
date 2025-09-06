@@ -12,7 +12,7 @@ async function setStaffCommission() {
     const staffId = args[0]; // Optional: specific staff ID
     const commissionPercentage = parseFloat(args[1] || DEFAULT_COMMISSION); // Optional: commission percentage
     
-    
+    console.log('===== STAFF COMMISSION UPDATE TOOL =====');
     
     if (isNaN(commissionPercentage) || commissionPercentage < 0 || commissionPercentage > 100) {
       console.error('Error: Commission percentage must be a number between 0 and 100');
@@ -28,7 +28,7 @@ async function setStaffCommission() {
         return;
       }
       
-      
+      console.log(`Updating commission for staff ${staffId}...`);
       
       // Get user info
       const user = await User.findByPk(staff.user_id);
@@ -38,12 +38,12 @@ async function setStaffCommission() {
       const oldCommission = parseFloat(staff.commission_percentage);
       await staff.update({ commission_percentage: commissionPercentage });
       
-      
-      
+      console.log(`✅ Updated commission for ${staffName} (${staffId}):`);
+      console.log(`   ${oldCommission}% → ${commissionPercentage}%`);
     } 
     // Otherwise, update all staff members
     else {
-      
+      console.log(`Updating commission for ALL staff to ${commissionPercentage}%...`);
       
       // Get all staff members
       const staffMembers = await Staff.findAll({
@@ -55,7 +55,7 @@ async function setStaffCommission() {
       });
       
       if (staffMembers.length === 0) {
-        
+        console.log('No staff members found in the database.');
         return;
       }
       
@@ -66,11 +66,11 @@ async function setStaffCommission() {
         
         await staff.update({ commission_percentage: commissionPercentage });
         
-        
-        
+        console.log(`✅ Updated ${staffName} (${staff.id}):`);
+        console.log(`   ${oldCommission}% → ${commissionPercentage}%`);
       }
       
-      
+      console.log(`\nCommission updated for ${staffMembers.length} staff members.`);
     }
     
   } catch (error) {

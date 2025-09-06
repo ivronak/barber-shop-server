@@ -32,7 +32,7 @@ exports.getStaffAppointments = async (req, res) => {
     
     // First, check if the user exists and has a valid role
     if (!req.user || req.user.role !== 'staff') {
-      
+      console.log('Access denied: User role is not staff', req.user?.role);
       return res.status(403).json({
         success: false,
         message: 'Access denied. Staff role required.'
@@ -41,10 +41,10 @@ exports.getStaffAppointments = async (req, res) => {
     
     // Find the staff record for this user
     const staffMember = await Staff.findOne({ where: { user_id: req.user.id } });
-    
+    console.log('Staff lookup result:', staffMember ? `Found staff ID: ${staffMember.id}` : 'Not found');
     
     if (!staffMember) {
-      
+      console.log('No staff record found for user ID:', req.user.id);
       return res.status(403).json({
         success: false,
         message: 'Access denied. Staff profile not found.'

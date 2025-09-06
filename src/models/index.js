@@ -9,10 +9,10 @@ const env = process.env.NODE_ENV || 'development';
 // For Vercel deployment, use special optimized config when in production
 let config;
 if (env === 'production' && process.env.VERCEL) {
-  
+  console.log('Using Vercel-optimized database configuration');
   config = require('../config/vercel-db.js');
 } else {
-  
+  console.log(`Using standard ${env} database configuration`);
   config = require('../config/database.js')[env];
 }
 

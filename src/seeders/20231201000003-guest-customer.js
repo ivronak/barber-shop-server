@@ -28,9 +28,9 @@ module.exports = {
         updated_at: new Date()
       }], {});
       
-      
+      console.log('Guest customer seeded successfully');
     } else {
-      
+      console.log('Guest customer already exists, skipping');
     }
   },
 

@@ -17,10 +17,10 @@ let config;
 
 // For Vercel deployment, use special optimized config when in production
 if (env === 'production' && process.env.VERCEL) {
-  
+  console.log('Using Vercel-optimized database configuration');
   config = require('./src/config/vercel-db.js');
 } else {
-  
+  console.log(`Using standard ${env} database configuration`);
   config = require('./src/config/database.js')[env];
 }
 
@@ -64,35 +64,35 @@ const tables = [
 // Run the clear operation
 (async () => {
   try {
-    
+    console.log('Connecting to database...');
     await sequelize.authenticate();
+    console.log('Database connection established successfully.');
     
-    
-    
-    
-    tables.forEach(table => 
-    
-    
+    console.log('Are you sure you want to clear all data from the database?');
+    console.log('This will DELETE ALL DATA from the following tables:');
+    tables.forEach(table => console.log(`- ${table}`));
+    console.log('\nTo proceed, run this command with the --confirm flag:');
+    console.log('node clear-database.js --confirm');
     
     // Check if --confirm flag is provided
     if (process.argv.includes('--confirm')) {
-      
+      console.log('\nProceeding with database clearing...');
       
       // Disable foreign key checks temporarily
       await sequelize.query('SET FOREIGN_KEY_CHECKS = 0');
       
       // Clear each table in order
       for (const table of tables) {
-        
+        console.log(`Clearing table: ${table}`);
         await sequelize.query(`DELETE FROM ${table}`);
       }
       
       // Re-enable foreign key checks
       await sequelize.query('SET FOREIGN_KEY_CHECKS = 1');
       
-      
-      
-      
+      console.log('\nDatabase cleared successfully!');
+      console.log('You can now run the seeder to repopulate the database:');
+      console.log('node run-test-seeder.js');
     }
     
     process.exit(0);
