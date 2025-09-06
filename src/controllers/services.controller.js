@@ -232,7 +232,7 @@ exports.createService = async (req, res) => {
 exports.updateService = async (req, res) => {
   try {
     const { id } = req.params;
-    let { name, description, price, duration, categoryId: bodyCategoryId, imageUrl, category, is_active: activeFlag } = req.body;
+    let { name, description, price, duration, categoryId: bodyCategoryId, imageUrl, category, is_active: activeFlag,is_tip_eligible:tipFlag } = req.body;
     
     if (!bodyCategoryId && category) {
       const catRecord = await ServiceCategory.findOne({ where: { name: category } });
@@ -257,6 +257,7 @@ exports.updateService = async (req, res) => {
       category_id: bodyCategoryId || service.category_id,
       imageUrl: imageUrl !== undefined ? imageUrl : service.imageUrl,
       is_active: activeFlag !== undefined ? activeFlag : service.is_active,
+      is_tip_eligible:tipFlag!==undefined?tipFlag:service?.is_tip_eligible
     });
     
     // Log activity if user is authenticated
