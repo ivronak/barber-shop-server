@@ -173,7 +173,7 @@ exports.getServiceById = async (req, res) => {
  */
 exports.createService = async (req, res) => {
   try {
-    console.log("req.body",req.body)
+    
     let { name, description, price, duration, categoryId: bodyCategoryId, imageUrl, category, is_active,is_tip_eligible } = req.body;
     
     // Legacy support: if categoryId not provided but category name is, look up ID
@@ -181,7 +181,7 @@ exports.createService = async (req, res) => {
       const catRecord = await ServiceCategory.findOne({ where: { name: category } });
       if (catRecord) bodyCategoryId = catRecord.id;
     }
-    console.log('bodyCategoryId',bodyCategoryId)
+    
     // Validate required fields
     if (!name || !price || !duration || !bodyCategoryId) {
       return res.status(400).json({

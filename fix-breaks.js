@@ -27,7 +27,7 @@ const dayToNumber = {
 
 async function fixBreaksWithNullDayOfWeek() {
   try {
-    console.log('Starting to fix breaks with null day_of_week values...');
+    
     
     // Get all breaks with null day_of_week
     const breaksToFix = await Break.findAll({
@@ -43,7 +43,7 @@ async function fixBreaksWithNullDayOfWeek() {
       ]
     });
     
-    console.log(`Found ${breaksToFix.length} breaks with null day_of_week`);
+    
     
     // Process each break
     const results = {
@@ -63,14 +63,14 @@ async function fixBreaksWithNullDayOfWeek() {
             // Update the break with the correct day_of_week
             await breakItem.update({ day_of_week: numericDayOfWeek });
             
-            console.log(`Updated break ID ${breakItem.id}: Set day_of_week to ${numericDayOfWeek} (${dayOfWeekString})`);
+            
             results.updated++;
           } else {
-            console.log(`Skipped break ID ${breakItem.id}: Invalid day_of_week string "${dayOfWeekString}"`);
+            
             results.skipped++;
           }
         } else {
-          console.log(`Skipped break ID ${breakItem.id}: No associated business hour found`);
+          
           results.skipped++;
         }
       } catch (error) {
@@ -79,18 +79,18 @@ async function fixBreaksWithNullDayOfWeek() {
       }
     }
     
-    console.log('\nFix complete!');
-    console.log(`Updated: ${results.updated}`);
-    console.log(`Failed: ${results.failed}`);
-    console.log(`Skipped: ${results.skipped}`);
-    console.log(`Total processed: ${breaksToFix.length}`);
+    
+    
+    
+    
+    
     
   } catch (error) {
     console.error('Error fixing breaks:', error);
   } finally {
     // Close the database connection
     await Break.sequelize.close();
-    console.log('Database connection closed');
+    
   }
 }
 

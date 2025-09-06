@@ -1575,10 +1575,7 @@ const getAdvancedServiceMetrics = async (req, res) => {
               ? 0.2 // 20% for treatments
               : 0.15; // 15% default
         } catch (error) {
-          console.log(
-            "Error fetching product cost ratio, using defaults:",
-            error.message
-          );
+        
           const catName2 = service.serviceCategory?.name;
           productCostRatio =
             catName2 === "haircut"
@@ -1609,10 +1606,7 @@ const getAdvancedServiceMetrics = async (req, res) => {
             overheadRate = 0.15; // 15% default overhead rate
           }
         } catch (error) {
-          console.log(
-            "Error fetching overhead rate, using default:",
-            error.message
-          );
+         
           overheadRate = 0.15; // 15% default
         }
 
@@ -1904,7 +1898,7 @@ const getStaffPerformanceMetrics = async (req, res) => {
       req.user?.staffId
     ) {
       targetStaffId = req.user.staffId;
-      console.log("Using staffId from JWT token:", targetStaffId);
+      
     }
 
     if (!targetStaffId) {
@@ -1921,9 +1915,7 @@ const getStaffPerformanceMetrics = async (req, res) => {
       });
     }
 
-    console.log(
-      `Fetching staff metrics for staffId: ${targetStaffId}, date range: ${dateFrom} to ${dateTo}`
-    );
+   
 
     // Convert dates
     const startDate = new Date(dateFrom);
@@ -1938,7 +1930,7 @@ const getStaffPerformanceMetrics = async (req, res) => {
       },
     });
 
-    console.log(`Found ${appointmentsCount} appointments`);
+    
 
     // ----------------------------------------------------------------------
     //  Revenue & Commission calculations (NEW)
@@ -1978,7 +1970,7 @@ const getStaffPerformanceMetrics = async (req, res) => {
       ],
       raw: true,
     });
-    console.log("serviceRevenueRowAll", serviceRevenueRowAll);
+    
     // Revenue from products sold by this staff (qualified column)
     const productRevenueRow = await InvoiceProduct.findOne({
       attributes: [[fn("sum", col("InvoiceProduct.total")), "revenue"]],
@@ -2060,9 +2052,6 @@ const getStaffPerformanceMetrics = async (req, res) => {
       ? parseFloat(staffRecord.commission_percentage || 0)
       : 0;
 
-    console.log(
-      `Revenue data: ${totalRevenue}, Commission (earned): ${commission}`
-    );
 
     // Get services data - most popular services for this staff member
     const topServices = await AppointmentService.findAll({
@@ -2090,7 +2079,7 @@ const getStaffPerformanceMetrics = async (req, res) => {
     });
 
     // Format service data
-    console.log("productRevenueRowAll", productRevenueRowAll, topServices);
+    
     const servicesData = topServices.map((service) => {
       const revenueMatches = serviceRevenueRowAll.filter(
         (rev) => rev.service_id === service.service_id
@@ -2123,7 +2112,7 @@ const getStaffPerformanceMetrics = async (req, res) => {
       };
     });
 
-    console.log(`Found ${servicesData.length} services`);
+    
 
     // Return metrics data
     return res.status(200).json({

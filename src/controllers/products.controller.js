@@ -126,7 +126,7 @@ const createProduct = async (req, res) => {
     const product = await db.Product.create(req.body);
     
     // Log activity to console
-    console.log(`Product created: ${product.name}`);
+    
     
     return res.status(201).json({
       success: true,
@@ -162,7 +162,7 @@ const updateProduct = async (req, res) => {
     await product.update(req.body);
     
     // Log activity to console
-    console.log(`Product updated: ${product.name}`);
+    
     
     return res.status(200).json({
       success: true,
@@ -201,7 +201,7 @@ const deleteProduct = async (req, res) => {
     await product.destroy();
     
     // Log activity to console
-    console.log(`Product deleted: ${productName}`);
+    
     
     return res.status(200).json({
       success: true,

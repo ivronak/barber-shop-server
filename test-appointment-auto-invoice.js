@@ -30,7 +30,7 @@ async function apiRequest(endpoint, method = 'GET', data = null, token = null) {
       headers['Authorization'] = `Bearer ${token}`;
     }
     
-    console.log(`Making ${method} request to ${endpoint}`);
+    
     
     const response = await axios({
       method,
@@ -41,7 +41,7 @@ async function apiRequest(endpoint, method = 'GET', data = null, token = null) {
       timeout: 10000
     });
     
-    console.log(`Response status: ${response.status}`);
+    
     
     return { 
       success: true, 
@@ -78,7 +78,7 @@ async function login(email, password) {
   const result = await apiRequest('/auth/login', 'POST', { email, password });
   if (result.success) {
     TOKEN = result.data.token;
-    console.log(`Logged in as ${result.data.user.name} (${result.data.user.role})`);
+    
     return true;
   } else {
     console.error('Login failed:', result.error);
@@ -88,38 +88,38 @@ async function login(email, password) {
 
 // Create a test appointment if needed
 async function createTestAppointment() {
-  console.log('\n===== Creating Test Appointment =====');
+  
   
   try {
     // First get a customer
     const customerResult = await apiRequest('/customers?limit=1', 'GET', null, TOKEN);
     if (!customerResult.success || !customerResult.data?.customers?.length) {
-      console.log('No customers found to create appointment');
+      
       return null;
     }
     
     const customer = customerResult.data.customers[0];
-    console.log(`Found customer: ${customer.name} (${customer.id})`);
+    
     
     // Get a staff member
     const staffResult = await apiRequest('/staff?limit=1', 'GET', null, TOKEN);
     if (!staffResult.success || !staffResult.data?.staff?.length) {
-      console.log('No staff found to create appointment');
+      
       return null;
     }
     
     const staff = staffResult.data.staff[0];
-    console.log(`Found staff: ${staff.user?.name || 'Unknown'} (${staff.id})`);
+    
     
     // Get a service
     const serviceResult = await apiRequest('/services?limit=1', 'GET', null, TOKEN);
     if (!serviceResult.success || !serviceResult.data?.services?.length) {
-      console.log('No services found to create appointment');
+      
       return null;
     }
     
     const service = serviceResult.data.services[0];
-    console.log(`Found service: ${service.name} - $${service.price} (${service.id})`);
+    
     
     // Create appointment for tomorrow
     const tomorrow = new Date();
@@ -134,12 +134,12 @@ async function createTestAppointment() {
       services: [service.id]
     };
     
-    console.log(`Creating appointment for ${appointmentDate} at 10:00 AM`);
+    
     
     const result = await apiRequest('/appointments', 'POST', appointmentData, TOKEN);
     
     if (result.success) {
-      console.log('Test appointment created successfully with ID:', result.data.appointment.id);
+      
       return result.data.appointment;
     } else {
       console.error('Failed to create test appointment:', result.error);
@@ -153,14 +153,14 @@ async function createTestAppointment() {
 
 // Find a scheduled appointment that can be marked as completed
 async function findScheduledAppointment() {
-  console.log('\n===== Finding Scheduled Appointment =====');
+  
   
   try {
     // Try to get all appointments
     const result = await apiRequest('/appointments?limit=20', 'GET', null, TOKEN);
     
     if (result.success && result.data && result.data.appointments && result.data.appointments.length > 0) {
-      console.log(`Found ${result.data.appointments.length} total appointments`);
+      
       
       // Look for scheduled appointments
       const scheduledAppointments = result.data.appointments.filter(
@@ -168,9 +168,9 @@ async function findScheduledAppointment() {
       );
       
       if (scheduledAppointments.length > 0) {
-        console.log(`Found ${scheduledAppointments.length} scheduled appointments`);
+        
         const selectedAppointment = scheduledAppointments[0];
-        console.log(`Selected appointment ID: ${selectedAppointment.id}, Date: ${selectedAppointment.date}, Customer: ${selectedAppointment.customer_name}`);
+        
         return selectedAppointment;
       }
       
@@ -180,13 +180,13 @@ async function findScheduledAppointment() {
       );
       
       if (confirmedAppointments.length > 0) {
-        console.log(`Found ${confirmedAppointments.length} confirmed appointments that can be completed`);
+        
         const selectedAppointment = confirmedAppointments[0];
-        console.log(`Selected appointment ID: ${selectedAppointment.id}, Date: ${selectedAppointment.date}, Customer: ${selectedAppointment.customer_name}`);
+        
         return selectedAppointment;
       }
       
-      console.log('No suitable appointments found to mark as completed');
+      
       
       // Create a test appointment if none found
       return await createTestAppointment();
@@ -203,17 +203,17 @@ async function findScheduledAppointment() {
 
 // Update appointment status to completed
 async function markAppointmentAsCompleted(appointmentId) {
-  console.log('\n===== Marking Appointment as Completed =====');
+  
   
   try {
-    console.log(`Updating appointment ${appointmentId} to 'completed' status`);
+    
     
     const result = await apiRequest(`/appointments/${appointmentId}`, 'PUT', {
       status: 'completed'
     }, TOKEN);
     
     if (result.success) {
-      console.log(`Appointment ${appointmentId} marked as completed successfully`);
+      
       return result.data.appointment;
     } else {
       console.error('Failed to mark appointment as completed:', result.error);
@@ -227,7 +227,7 @@ async function markAppointmentAsCompleted(appointmentId) {
 
 // Check if invoice was created for the appointment
 async function checkInvoiceCreated(appointmentId) {
-  console.log('\n===== Checking Auto-Created Invoice =====');
+  
   
   try {
     // Find the invoice with the appointment ID
@@ -237,24 +237,24 @@ async function checkInvoiceCreated(appointmentId) {
     const invoices = result.data?.invoices || result.data?.data || [];
     
     if (result.success && invoices.length > 0) {
-      console.log(`Found ${invoices.length} total invoices`);
+      
       
       // Find invoice for this appointment
       const invoice = invoices.find(inv => inv.appointment_id === appointmentId);
       
       if (invoice) {
-        console.log('\nInvoice was created automatically:');
-        console.log(`- Invoice ID: ${invoice.id}`);
-        console.log(`- Appointment ID: ${invoice.appointment_id}`);
-        console.log(`- Customer: ${invoice.customer_name}`);
-        console.log(`- Staff: ${invoice.staff_name}`);
-        console.log(`- Subtotal: ${invoice.subtotal}`);
-        console.log(`- Tax Rate: ${invoice.tax}%`);
-        console.log(`- Tax Amount: ${invoice.tax_amount}`);
-        console.log(`- Total: ${invoice.total}`);
-        console.log(`- Status: ${invoice.status} (should be 'paid')`);
-        console.log(`- Payment Method: ${invoice.payment_method} (should be 'cash')`);
-        console.log(`- Date: ${invoice.date}`);
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         
         // Verify that the status is set to 'paid' and payment method to 'cash'
         if (invoice.status !== 'paid') {
@@ -282,10 +282,10 @@ async function checkInvoiceCreated(appointmentId) {
 
 // Main test function
 async function runTest() {
-  console.log('===== Testing Auto-Invoice Generation =====');
-  console.log(`API URL: ${API_URL}`);
-  console.log(`Test user: ${TEST_USER.email}`);
-  console.log('');
+  
+  
+  
+  
   
   try {
     // Step 1: Login
@@ -313,12 +313,12 @@ async function runTest() {
     const invoice = await checkInvoiceCreated(appointment.id);
     
     if (invoice) {
-      console.log('\n===== TEST PASSED =====');
-      console.log('Auto-invoice generation is working correctly!');
+      
+      
       return true;
     } else {
-      console.log('\n===== TEST FAILED =====');
-      console.log('No invoice was generated when appointment was marked as completed');
+      
+      
       return false;
     }
   } catch (error) {
@@ -331,7 +331,7 @@ async function runTest() {
 // Run the test
 runTest()
   .then(success => {
-    console.log(`\nTest completed with ${success ? 'SUCCESS' : 'FAILURE'}`);
+    
     process.exit(success ? 0 : 1);
   })
   .catch(error => {

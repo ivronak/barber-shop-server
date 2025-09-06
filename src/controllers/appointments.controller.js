@@ -316,9 +316,7 @@ exports.updateAppointment = async (req, res) => {
       paymentMethod,
     } = req.body;
 
-    console.log(
-      `[INVOICE-DEBUG] Starting appointment update: ID=${id}, Status=${status}`
-    );
+   
 
     // Find appointment
     const appointment = await Appointment.findByPk(id, {
@@ -331,7 +329,7 @@ exports.updateAppointment = async (req, res) => {
 
     if (!appointment) {
       await transaction.rollback();
-      console.log(`[INVOICE-DEBUG] Appointment not found: ${id}`);
+      
       return res.status(404).json({
         success: false,
         message: "Appointment not found",
@@ -340,10 +338,7 @@ exports.updateAppointment = async (req, res) => {
 
     // Store the original status before updating
     const originalStatus = appointment.status;
-    console.log(
-      `[INVOICE-DEBUG] Found appointment: ${appointment.id}, Current Status=${originalStatus}, New Status=${status}`
-    );
-
+   
     /*********************************************************************
      * 1.  Optional service replacement
      * If the client sends an array of service IDs we replace the existing
@@ -404,19 +399,12 @@ exports.updateAppointment = async (req, res) => {
       { transaction }
     );
 
-    console.log(
-      `[INVOICE-DEBUG] Appointment status updated: ${
-        status || appointment.status
-      }`
-    );
+   
 
     // If marking as completed, update customer visit stats and create invoice
     // Compare with originalStatus to ensure we only create invoice when status is newly changed to completed
     if (status === "completed" && originalStatus !== "completed") {
-      console.log(
-        `[INVOICE-DEBUG] Status is changing from '${originalStatus}' to 'completed' - starting invoice generation process`
-      );
-
+     
       try {
         // Update customer visit stats
         await Customer.update(
@@ -430,9 +418,7 @@ exports.updateAppointment = async (req, res) => {
           }
         );
 
-        console.log(
-          `[INVOICE-DEBUG] Updated customer visit stats for customer ID: ${appointment.customer_id}`
-        );
+       
 
         // Create invoice automatically when appointment is marked as completed
         // First check if an invoice already exists for this appointment
@@ -441,23 +427,15 @@ exports.updateAppointment = async (req, res) => {
           attributes: { exclude: ["staff_id", "staff_name"] },
         });
 
-        if (existingInvoice) {
-          console.log(
-            `[INVOICE-DEBUG] Invoice already exists for this appointment: ${existingInvoice.id}`
-          );
-        }
+    
 
         if (!existingInvoice) {
-          console.log(
-            `[INVOICE-DEBUG] No existing invoice found - creating new invoice`
-          );
+          
 
           // Get business settings for tax rate
           const businessSettings = await BusinessSetting.findOne();
           const taxRate = businessSettings?.tax_rate || 0;
-          console.log(
-            `[INVOICE-DEBUG] Got business settings - tax rate: ${taxRate}%`
-          );
+        
 
           // Get GST rates if available
           let gstComponents = [];
@@ -466,11 +444,7 @@ exports.updateAppointment = async (req, res) => {
             include: ["components"],
           });
 
-          console.log(
-            `[INVOICE-DEBUG] Active GST Rate found: ${
-              activeGSTRate ? "Yes" : "No"
-            }`
-          );
+      
 
           // Calculate invoice details
           const invoiceServices = [];
@@ -478,10 +452,7 @@ exports.updateAppointment = async (req, res) => {
 
           const servicesForInvoice =
             updatedServiceDetails || appointment.appointmentServices;
-          console.log(
-            `[INVOICE-DEBUG] Processing ${servicesForInvoice.length} services for the invoice`
-          );
-
+         
           // Build service invoice lines
           for (const svc of servicesForInvoice) {
             // When updatedServiceDetails is present, svc is a Service model (id = service id)
@@ -513,9 +484,7 @@ exports.updateAppointment = async (req, res) => {
           /***********************  PRODUCTS  ***************************/
           const productRecords = [];
           if (Array.isArray(newProductIds) && newProductIds.length > 0) {
-            console.log(
-              `[INVOICE-DEBUG] Processing ${newProductIds.length} products for the invoice`
-            );
+           
             for (const prodId of newProductIds) {
               const product = await sequelize.models.Product.findByPk(prodId);
               if (!product) continue; // skip invalid id silently
@@ -543,13 +512,7 @@ exports.updateAppointment = async (req, res) => {
           const tipAmtNum = tipAmount ? parseFloat(tipAmount) : 0;
           const total = subtotal + taxAmount + 0; // header tip removed; allocation happens on services
 
-          console.log(
-            `[INVOICE-DEBUG] Invoice calculation: Subtotal=${subtotal.toFixed(
-              2
-            )}, Tax Rate=${finalTaxRate.toFixed(
-              2
-            )}%, Tax Amount=${taxAmount.toFixed(2)}, Total=${total.toFixed(2)}`
-          );
+        
 
           // Prepare tax components if we have GST rate details
           const taxComponents = [];
@@ -563,9 +526,7 @@ exports.updateAppointment = async (req, res) => {
                 amount: parseFloat(componentAmount).toFixed(2),
               });
             });
-            console.log(
-              `[INVOICE-DEBUG] Created ${taxComponents.length} tax components`
-            );
+            
           } else if (finalTaxRate > 0) {
             // Create a default tax component if no GST components
             taxComponents.push({
@@ -578,7 +539,7 @@ exports.updateAppointment = async (req, res) => {
 
           // Create invoice with a single transaction
           const invoiceId = generateInvoiceId();
-          console.log(`[INVOICE-DEBUG] Generated invoice ID: ${invoiceId}`);
+          
 
           // Create the main invoice record
           const invoice = await Invoice.create(
@@ -602,16 +563,10 @@ exports.updateAppointment = async (req, res) => {
             { transaction }
           );
 
-          console.log(
-            `[INVOICE-DEBUG] Invoice created successfully with ID: ${invoice.id}`
-          );
-
+         
           // Create all invoice services in a single bulk operation
           if (invoiceServices.length > 0) {
-            console.log(
-              `[INVOICE-DEBUG] Creating ${invoiceServices.length} invoice service records`
-            );
-
+           
             // Prepare all invoice service records with invoice_id
             const serviceRecords = invoiceServices.map((service) => ({
               id: service.id,
@@ -708,16 +663,12 @@ exports.updateAppointment = async (req, res) => {
 
             // Bulk create all invoice services
             await InvoiceService.bulkCreate(serviceRecords, { transaction });
-            console.log(
-              `[INVOICE-DEBUG] Invoice services created successfully in bulk`
-            );
+           
           }
 
           // Create all tax components in a single bulk operation
           if (taxComponents.length > 0) {
-            console.log(
-              `[INVOICE-DEBUG] Creating ${taxComponents.length} tax components`
-            );
+           
 
             // Prepare all tax component records with invoice_id
             const componentRecords = taxComponents.map((component) => ({
@@ -730,9 +681,7 @@ exports.updateAppointment = async (req, res) => {
 
             // Bulk create all tax components
             await TaxComponent.bulkCreate(componentRecords, { transaction });
-            console.log(
-              `[INVOICE-DEBUG] Tax components created successfully in bulk`
-            );
+           
           }
 
           // Create all invoice products in a single bulk operation
@@ -744,17 +693,11 @@ exports.updateAppointment = async (req, res) => {
               })),
               { transaction }
             );
-            console.log(
-              `[INVOICE-DEBUG] Invoice products created successfully in bulk`
-            );
+           
           }
 
           // Update customer total_spent in the same transaction
-          console.log(
-            `[INVOICE-DEBUG] Updating customer total_spent with formatted total: ${parseFloat(
-              total
-            ).toFixed(2)}`
-          );
+         
           await Customer.update(
             {
               total_spent: sequelize.literal(
@@ -767,9 +710,7 @@ exports.updateAppointment = async (req, res) => {
               transaction,
             }
           );
-          console.log(
-            `[INVOICE-DEBUG] Customer total_spent updated successfully in transaction`
-          );
+         
         }
       } catch (invoiceError) {
         console.error(
@@ -798,17 +739,15 @@ exports.updateAppointment = async (req, res) => {
         },
         { transaction }
       );
-      console.log(`[INVOICE-DEBUG] Activity logged for user: ${req.user.name}`);
+      
     }
 
-    console.log(`[INVOICE-DEBUG] Committing transaction`);
+    
     await transaction.commit();
-    console.log(`[INVOICE-DEBUG] Transaction committed successfully`);
+    
 
     // Reload the appointment to get the updated data with all associations
-    console.log(
-      `[INVOICE-DEBUG] Reloading appointment with invoice information`
-    );
+   
     const updatedAppointment = await Appointment.findByPk(id, {
       include: [
         { association: "customer" },
@@ -821,11 +760,7 @@ exports.updateAppointment = async (req, res) => {
       ],
     });
 
-    console.log(
-      `[INVOICE-DEBUG] Has invoice after reload: ${
-        updatedAppointment.invoice ? "Yes" : "No"
-      }`
-    );
+   
 
     return res.status(200).json({
       success: true,
@@ -990,7 +925,7 @@ exports.getAvailableSlots = async (req, res) => {
       });
     }
 
-    console.log("staffWorkingHours", staffWorkingHours);
+    
 
     if (!staffWorkingHours.length) {
       return res.status(200).json({
@@ -1033,7 +968,7 @@ exports.getAvailableSlots = async (req, res) => {
       partialClosures,
       date
     );
-    console.log(slots);
+    
     return res.status(200).json({
       success: true,
       slots,
@@ -1341,14 +1276,10 @@ exports.getStaffAppointments = async (req, res) => {
       serviceId,
     } = req.query;
 
-    console.log("Staff appointments request from user:", {
-      userId: req.user?.id,
-      userRole: req.user?.role,
-    });
-
+    
     // First, check if the user exists and has a valid role
     if (!req.user || req.user.role !== "staff") {
-      console.log("Access denied: User role is not staff", req.user?.role);
+      
       return res.status(403).json({
         success: false,
         message: "Access denied. Staff role required.",
@@ -1365,7 +1296,7 @@ exports.getStaffAppointments = async (req, res) => {
     );
 
     if (!staffMember) {
-      console.log("No staff record found for user ID:", req.user.id);
+      
       return res.status(403).json({
         success: false,
         message: "Access denied. Staff profile not found.",
@@ -1474,10 +1405,7 @@ exports.getStaffAppointments = async (req, res) => {
       ];
     }
 
-    console.log(
-      "Fetching appointments with query:",
-      JSON.stringify(appointmentsQuery.where)
-    );
+  
 
     // Execute queries
     const [appointmentsResult, servicesList] = await Promise.all([
@@ -1489,7 +1417,7 @@ exports.getStaffAppointments = async (req, res) => {
 
     // Format the response data
     const { count, rows: appointments } = appointmentsResult;
-    console.log(`Found ${count} appointments for staff ID ${staffId}`);
+    
 
     const services = servicesList.map((service) => ({
       id: service.id,
@@ -1566,7 +1494,7 @@ exports.getCalendarAppointments = async (req, res) => {
     //   // where: { is_available: true },
     //   // order: [["id", "ASC"]],
     // });
-    // console.log("breaklist", breaklist);
+    // 
     // Format the staff and services data
     const staff = staffList.map((staffMember) => ({
       id: staffMember.id,

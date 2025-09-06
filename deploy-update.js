@@ -2,14 +2,14 @@ require('dotenv').config();
 const fs = require('fs');
 const path = require('path');
 
-console.log('Preparing to deploy controller update...');
+
 
 // Read the updated controller file
 const controllerPath = path.join(__dirname, 'src', 'controllers', 'appointments.controller.js');
 const controllerContent = fs.readFileSync(controllerPath, 'utf8');
 
-console.log(`Read controller file: ${controllerPath}`);
-console.log(`File size: ${controllerContent.length} bytes`);
+
+
 
 // Extract the getStaffAppointments function
 const functionRegex = /exports\.getStaffAppointments\s*=\s*async\s*\(req,\s*res\)\s*=>\s*{[\s\S]*?};/;
@@ -21,7 +21,7 @@ if (!functionMatch) {
 }
 
 const functionCode = functionMatch[0];
-console.log(`Extracted getStaffAppointments function: ${functionCode.length} bytes`);
+
 
 // Create deployment instructions
 const deploymentInstructions = `
@@ -53,5 +53,5 @@ ${functionCode}
 const deploymentPath = path.join(__dirname, 'STAFF-APPOINTMENTS-FIX.md');
 fs.writeFileSync(deploymentPath, deploymentInstructions);
 
-console.log(`Deployment instructions written to: ${deploymentPath}`);
-console.log('Done!'); 
+
+ 

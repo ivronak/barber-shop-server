@@ -7,12 +7,12 @@ async function checkStaffProfile() {
     // The user ID from the token
     const userId = 'bb1c8744-f033-4d1e-a908-f8ef8818a167';
     
-    console.log('Looking up user with ID:', userId);
+    
     
     // Find the user
     const user = await User.findByPk(userId);
     if (!user) {
-      console.log('User not found!');
+      
       return;
     }
     
@@ -29,10 +29,10 @@ async function checkStaffProfile() {
     });
     
     if (!staffProfile) {
-      console.log('No staff profile found for this user!');
+      
       
       // Create a staff profile
-      console.log('Creating staff profile...');
+      
       const newStaffProfile = await Staff.create({
         user_id: userId,
         position: 'Barber',

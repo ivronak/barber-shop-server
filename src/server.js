@@ -23,11 +23,11 @@ const initializeBusinessSettings = async () => {
     // Load business settings for timezone
     const businessSettings = await BusinessSetting.findOne();
     if (businessSettings) {
-      console.log(`Using business timezone: ${businessSettings.timezone}`);
+      
       // Set default timezone for the application
       process.env.TZ = businessSettings.timezone;
     } else {
-      console.log('No business settings found, using default timezone: UTC');
+      
       process.env.TZ = 'UTC';
     }
   } catch (error) {
@@ -137,12 +137,12 @@ app.use((err, req, res, next) => {
 // Database connection function
 const connectDB = async () => {
   try {
-    console.log('Attempting database connection...');
-    console.log('Environment:', process.env.NODE_ENV);
-    console.log('Running on Vercel:', process.env.VERCEL ? 'Yes' : 'No');
-    console.log('Database host:', process.env.DB_HOST);
-    console.log('Database name:', process.env.DB_NAME);
-    console.log('Database name:', process.env.DB_PORT);
+    
+    
+    
+    
+    
+    
     
     // Set a timeout for the database connection attempt
     const connectionPromise = sequelize.authenticate();
@@ -158,13 +158,13 @@ const connectDB = async () => {
     // Race the connection against the timeout
     await Promise.race([connectionPromise, timeoutPromise]);
     
-    console.log('Database connection has been established successfully.');
-    console.log('Current environment:', process.env.NODE_ENV);
+    
+    
     
     // Sync database models (in development)
     if (process.env.NODE_ENV === 'development') {
       await sequelize.sync({ alter: true });
-      console.log('Database models synchronized');
+      
     }
     return true;
   } catch (error) {
@@ -254,7 +254,7 @@ if (process.env.NODE_ENV !== 'production') {
     // Initialize business settings after DB connection
     await initializeBusinessSettings();
     app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
+      
     });
   };
   startServer();
@@ -265,7 +265,7 @@ const prepareApp = async () => {
   try {
     // Only try to connect to DB if not already connected
     const result = await connectDB();
-    console.log('Database connection prepared for serverless:', result);
+    
     
     // Initialize business settings for timezone
     if (result) {

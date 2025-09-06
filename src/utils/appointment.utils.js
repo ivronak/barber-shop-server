@@ -14,29 +14,29 @@ const dayOfWeekUtils = require('./dayOfWeekUtils');
  * @returns {Object} - Object with dayOfWeek (string) and numericDayOfWeek (number)
  */
 function getConsistentDayOfWeek(date, timezone = process.env.TZ || 'UTC') {
-  console.log(`[DAY-DEBUG] getConsistentDayOfWeek called with date: ${date}`);
-  console.log(`[DAY-DEBUG] date type: ${typeof date}`);
+  
+  
   
   // Compare the two methods of calculation for debugging
   
   // Method 1: Original method (potentially inconsistent with timezone issues)
   const dateObj = date instanceof Date ? date : new Date(date);
-  console.log(`[DAY-DEBUG] Original method date object: ${dateObj}`);
-  console.log(`[DAY-DEBUG] Date object toString: ${dateObj.toString()}`);
+  
+  
   const originalNumericDay = dateObj.getDay();
   const originalDayName = dayOfWeekUtils.getDayNameFromNumber(originalNumericDay);
-  console.log(`[DAY-DEBUG] Original method results: day=${originalNumericDay}, name=${originalDayName}`);
+  
   
   // Method 2: New robust method using noon UTC
   const robustResult = dayOfWeekUtils.getConsistentDayOfWeekFromString(date, timezone);
-  console.log(`[DAY-DEBUG] Robust method results: day=${robustResult.numericDayOfWeek}, name=${robustResult.dayOfWeek}`);
+  
   
   // Check if there's a difference between the methods
   if (originalNumericDay !== robustResult.numericDayOfWeek) {
-    console.log(`[DAY-DEBUG] WARNING! Day calculation difference detected!`);
-    console.log(`[DAY-DEBUG] Original method: ${originalNumericDay} (${originalDayName})`);
-    console.log(`[DAY-DEBUG] Robust method: ${robustResult.numericDayOfWeek} (${robustResult.dayOfWeek})`);
-    console.log(`[DAY-DEBUG] Using the ROBUST method to ensure consistency`);
+    
+    
+    
+    
   }
   
   // Return the robust result to ensure consistency
@@ -55,19 +55,19 @@ function convertTimezone(timeString, date, sourceTimezone, targetTimezone) {
   // Standardize time format
   const standardizedTime = standardizeTimeFormat(timeString);
   
-  console.log(`Converting time: ${standardizedTime} from ${sourceTimezone} to ${targetTimezone} on ${date}`);
+  
   
   try {
     // Create a Date object with the standardized time
     const dateObj = new Date(`${date}T${standardizedTime}`);
-    console.log('Original date object:', dateObj.toString());
+    
     
     // For simplicity, we'll use the built-in Date methods
     // In a production environment, consider using a library like date-fns-tz
     
     // Get the timezone offsets in minutes
     const sourceOffset = new Date().getTimezoneOffset();
-    console.log('Source offset:', sourceOffset);
+    
     
     // Convert to target timezone
     let targetTime;
@@ -85,7 +85,7 @@ function convertTimezone(timeString, date, sourceTimezone, targetTimezone) {
       targetTime = `${localHours.toString().padStart(2, '0')}:${localMinutes.toString().padStart(2, '0')}:${localSeconds.toString().padStart(2, '0')}`;
     }
     
-    console.log('Converted time:', targetTime);
+    
     return targetTime;
   } catch (error) {
     console.error('Error converting timezone:', error);
@@ -116,18 +116,18 @@ async function checkAvailability(staffId, date, startTime, endTime, excludeAppoi
   startTime = standardizeTimeFormat(startTime);
   endTime = standardizeTimeFormat(endTime);
   
-  console.log('Checking availability for:', { date, startTime, endTime });
+  
   
   // Check business hours
   const { dayOfWeek, numericDayOfWeek } = getConsistentDayOfWeek(date);
-  console.log('Day of week:', dayOfWeek, 'Numeric day:', numericDayOfWeek);
+  
   
   const businessHours = await BusinessHour.findOne({
     where: { day_of_week: dayOfWeek }
   });
   
   if (!businessHours || !businessHours.open_time || !businessHours.close_time) {
-    console.log('Shop is closed on this day (no business hours)');
+    
     return false; // Shop is closed on this day
   }
   
@@ -135,10 +135,10 @@ async function checkAvailability(staffId, date, startTime, endTime, excludeAppoi
   const businessOpenTime = standardizeTimeFormat(businessHours.open_time);
   const businessCloseTime = standardizeTimeFormat(businessHours.close_time);
   
-  console.log('Business hours:', { open: businessOpenTime, close: businessCloseTime });
+  
   
   if (startTime < businessOpenTime || endTime > businessCloseTime) {
-    console.log('Time is outside business hours');
+    
     return false; // Outside business hours
   }
   
@@ -148,7 +148,7 @@ async function checkAvailability(staffId, date, startTime, endTime, excludeAppoi
   });
   
   if (shopClosure) {
-    console.log('Shop is closed all day');
+    
     return false; // Shop is closed all day
   }
   
@@ -157,19 +157,19 @@ async function checkAvailability(staffId, date, startTime, endTime, excludeAppoi
     where: { date, is_full_day: false }
   });
   
-  console.log('Partial closures count:', partialClosures.length);
+  
   
   for (const closure of partialClosures) {
     const closureStart = standardizeTimeFormat(closure.start_time);
     const closureEnd = standardizeTimeFormat(closure.end_time);
     
-    console.log('Checking partial closure:', { start: closureStart, end: closureEnd });
+    
     if (
       (startTime >= closureStart && startTime < closureEnd) ||
       (endTime > closureStart && endTime <= closureEnd) ||
       (startTime <= closureStart && endTime >= closureEnd)
     ) {
-      console.log('Overlaps with partial closure');
+      
       return false; // Overlaps with partial closure
     }
   }
@@ -179,7 +179,7 @@ async function checkAvailability(staffId, date, startTime, endTime, excludeAppoi
   const timezone = businessSettings ? businessSettings.timezone : 'UTC';
   const slotDuration = businessSettings ? businessSettings.slot_duration : 30;
   
-  console.log('Business settings:', { timezone, slotDuration });
+  
   
   // Check for admin-defined breaks in the Break model
   const businessHour = await BusinessHour.findOne({
@@ -197,11 +197,11 @@ async function checkAvailability(staffId, date, startTime, endTime, excludeAppoi
       }
     });
     
-    console.log(`Found ${adminBreaks.length} admin breaks for business hour ${businessHour.id} on day ${dayOfWeek}`);
+    
     
     // Log each break for debugging
     adminBreaks.forEach(breakItem => {
-      console.log(`Break ID: ${breakItem.id}, Name: ${breakItem.name}, Time: ${breakItem.start_time}-${breakItem.end_time}, Day: ${breakItem.day_of_week}, Business Hour: ${breakItem.business_hour_id}`);
+      
     });
   }
   
@@ -210,13 +210,13 @@ async function checkAvailability(staffId, date, startTime, endTime, excludeAppoi
     const breakStart = standardizeTimeFormat(breakTime.start_time);
     const breakEnd = standardizeTimeFormat(breakTime.end_time);
     
-    console.log('Checking break:', { start: breakStart, end: breakEnd });
+    
     if (
       (startTime >= breakStart && startTime < breakEnd) ||
       (endTime > breakStart && endTime <= breakEnd) ||
       (startTime <= breakStart && endTime >= breakEnd)
     ) {
-      console.log('Overlaps with break');
+      
       return false; // Overlaps with break
     }
   }
@@ -242,24 +242,24 @@ async function checkAvailability(staffId, date, startTime, endTime, excludeAppoi
     attributes: ['time', 'end_time']
   });
   
-  console.log('Existing appointments count:', existingAppointments.length);
+  
   
   for (const appointment of existingAppointments) {
     const appointmentStart = standardizeTimeFormat(appointment.time);
     const appointmentEnd = standardizeTimeFormat(appointment.end_time);
     
-    console.log('Checking appointment:', { start: appointmentStart, end: appointmentEnd });
+    
     if (
       (startTime >= appointmentStart && startTime < appointmentEnd) ||
       (endTime > appointmentStart && endTime <= appointmentEnd) ||
       (startTime <= appointmentStart && endTime >= appointmentEnd)
     ) {
-      console.log('Overlaps with existing appointment');
+      
       return false; // Overlaps with existing appointment
     }
   }
   
-  console.log('Time slot is available');
+  
   return true; // Time slot is available
 }
 
@@ -295,8 +295,8 @@ function generateTimeSlots(
   date = null,
   timezone = null
 ) {
-  console.log(`[GEN-SLOTS] ========== STARTING SLOT GENERATION ==========`);
-  console.log(`[GEN-SLOTS] Params: open=${businessOpenTime}, close=${businessCloseTime}, slotDuration=${slotDuration}, serviceDuration=${serviceDuration}`);
+  
+  
   
   // Initialize array to hold all slots
   const slots = [];
@@ -305,8 +305,8 @@ function generateTimeSlots(
   const businessOpen = convertTimeToMinutes(businessOpenTime);
   const businessClose = convertTimeToMinutes(businessCloseTime);
   
-  console.log(`[GEN-SLOTS] Business hours in minutes: open=${businessOpen}, close=${businessClose}`);
-  console.log(`[GEN-SLOTS] Generating slots between ${businessOpenTime} and ${businessCloseTime} (${slotDuration} min slots, ${serviceDuration} min service)`);
+  
+  
   
   // Get consistent day of week values for the requested date
   let requestedDayOfWeek = null;
@@ -316,15 +316,15 @@ function generateTimeSlots(
     const dayInfo = getConsistentDayOfWeek(date);
     requestedDayOfWeek = dayInfo.dayOfWeek;
     numericDayOfWeek = dayInfo.numericDayOfWeek;
-    console.log(`[GEN-SLOTS] Date info: ${date}, day=${requestedDayOfWeek}, numericDay=${numericDayOfWeek}`);
+    
   }
   
   // Filter and validate breaks
-  console.log(`[GEN-SLOTS] Processing ${breaks.length} breaks`);
+  
   const validBreaks = Array.isArray(breaks) ? breaks.filter(breakItem => {
     // Skip breaks without required properties
     if (!breakItem || !breakItem.start_time || !breakItem.end_time) {
-      console.log(`[GEN-SLOTS] Skipping invalid break - missing required properties`);
+      
       return false;
     }
     
@@ -333,25 +333,25 @@ function generateTimeSlots(
       const breakDay = breakItem.day_of_week.toLowerCase();
       const breakDayMatches = breakDay === requestedDayOfWeek;
       if (!breakDayMatches) {
-        console.log(`[GEN-SLOTS] Skipping break ID=${breakItem.id || 'unknown'} (${breakItem.name || 'unnamed'})`);
-        console.log(`[GEN-SLOTS] Break day "${breakDay}" doesn't match requested day "${requestedDayOfWeek}"`);
+        
+        
         return false;
       }
     }
     
-    console.log(`[GEN-SLOTS] Including break ID=${breakItem.id || 'unknown'}: ${breakItem.start_time}-${breakItem.end_time}`);
+    
     // The break is valid
     return true;
   }) : [];
   
-  console.log(`[GEN-SLOTS] After filtering: ${validBreaks.length} valid breaks`);
+  
   
   // Process staff working hours
-  console.log(`[GEN-SLOTS] Processing ${staffWorkingHours.length} staff working hours`);
+  
   const validWorkingHours = Array.isArray(staffWorkingHours) ? staffWorkingHours.filter(workingHour => {
     // Skip working hours without required properties
     if (!workingHour || !workingHour.start_time || !workingHour.end_time) {
-      console.log(`[GEN-SLOTS] Skipping invalid working hour - missing required properties`);
+      
       return false;
     }
     
@@ -360,37 +360,37 @@ function generateTimeSlots(
       const workingDay = workingHour.day_of_week.toLowerCase();
       const dayMatches = workingDay === requestedDayOfWeek;
       if (!dayMatches) {
-        console.log(`[GEN-SLOTS] Skipping working hour ID=${workingHour.id || 'unknown'}`);
-        console.log(`[GEN-SLOTS] Working hour day "${workingDay}" doesn't match requested day "${requestedDayOfWeek}"`);
+        
+        
         return false;
       }
     }
     
-    console.log(`[GEN-SLOTS] Including working hour ID=${workingHour.id || 'unknown'}: ${workingHour.start_time}-${workingHour.end_time}`);
+    
     // The working hour is valid
     return true;
   }) : [];
   
-  console.log(`[GEN-SLOTS] After filtering: ${validWorkingHours.length} valid working hours`);
+  
   
   // Calculate how many slots we'll generate
   const totalMinutes = businessClose - businessOpen;
   const estimatedSlots = Math.floor(totalMinutes / slotDuration);
-  console.log(`[GEN-SLOTS] Estimating ${estimatedSlots} total slots over ${totalMinutes} minutes`);
+  
   
   // Debug existing appointments
   if (existingAppointments && existingAppointments.length > 0) {
-    console.log(`[GEN-SLOTS] Processing ${existingAppointments.length} existing appointments:`);
+    
     existingAppointments.forEach((appt, i) => {
-      console.log(`[GEN-SLOTS] Appointment #${i+1}: ${appt.time} - ${appt.end_time}`);
+      
     });
   }
   
   // Debug partial closures
   if (partialClosures && partialClosures.length > 0) {
-    console.log(`[GEN-SLOTS] Processing ${partialClosures.length} partial closures:`);
+    
     partialClosures.forEach((closure, i) => {
-      console.log(`[GEN-SLOTS] Closure #${i+1}: ${closure.start_time} - ${closure.end_time}, Reason: ${closure.reason || 'No reason'}`);
+      
     });
   }
   
@@ -403,7 +403,7 @@ function generateTimeSlots(
   let countPastTime = 0; // New counter for past-time slots
   
   // Generate all possible slots within business hours
-  console.log(`[GEN-SLOTS] Starting slot generation loop`);
+  
   for (let time = businessOpen; time <= businessClose - serviceDuration; time += slotDuration) {
     const slotStart = convertMinutesToTime(time);
     const slotEnd = convertMinutesToTime(time + serviceDuration);
@@ -411,7 +411,7 @@ function generateTimeSlots(
     // Debug every 5th slot to avoid excessive logging
     const debugThisSlot = (slots.length % 5 === 0);
     if (debugThisSlot) {
-      console.log(`[GEN-SLOTS] Evaluating slot ${slots.length+1}: ${slotStart} - ${slotEnd}`);
+      
     }
     
     // Default to available
@@ -456,7 +456,7 @@ function generateTimeSlots(
         unavailableReason = 'Past time';
         countPastTime++;
         if (debugThisSlot) {
-          console.log(`[GEN-SLOTS] Slot unavailable - Past time (timezone: ${tz})`);
+          
         }
       }
     }
@@ -474,7 +474,7 @@ function generateTimeSlots(
         if (time >= workStart && time + serviceDuration <= workEnd) {
           isWithinWorkingHours = true;
           if (debugThisSlot) {
-            console.log(`[GEN-SLOTS] Slot is within working hours: ${workingHour.start_time}-${workingHour.end_time}`);
+            
           }
           break;
         }
@@ -486,7 +486,7 @@ function generateTimeSlots(
         unavailableReason = 'Outside staff working hours';
         countOutsideWorkingHours++;
         if (debugThisSlot) {
-          console.log(`[GEN-SLOTS] Slot unavailable - Outside staff working hours`);
+          
         }
       }
     }
@@ -507,7 +507,7 @@ function generateTimeSlots(
           unavailableReason = breakItem.name ? `Break: ${breakItem.name}` : 'Break time';
           countBreakOverlap++;
           if (debugThisSlot) {
-            console.log(`[GEN-SLOTS] Slot unavailable due to break: ${breakItem.name || 'unknown'} (${breakItem.start_time}-${breakItem.end_time})`);
+            
           }
           break;
         }
@@ -529,7 +529,7 @@ function generateTimeSlots(
           unavailableReason = 'Already booked';
           countAppointmentOverlap++;
           if (debugThisSlot) {
-            console.log(`[GEN-SLOTS] Slot unavailable due to existing appointment: ${appointment.time}-${appointment.end_time}`);
+            
           }
           break;
         }
@@ -551,7 +551,7 @@ function generateTimeSlots(
           unavailableReason = `Shop closed: ${closure.reason || 'Temporary closure'}`;
           countClosureOverlap++;
           if (debugThisSlot) {
-            console.log(`[GEN-SLOTS] Slot unavailable due to closure: ${closure.reason || 'No reason'} (${closure.start_time}-${closure.end_time})`);
+            
           }
           break;
         }
@@ -579,7 +579,7 @@ function generateTimeSlots(
     if (isAvailable) {
       countAvailable++;
       if (debugThisSlot) {
-        console.log(`[GEN-SLOTS] Slot is AVAILABLE: ${slotStart} - ${slotEnd}`);
+        
       }
     } else {
       countUnavailable++;
@@ -588,14 +588,14 @@ function generateTimeSlots(
     slots.push(slot);
   }
   
-  console.log(`[GEN-SLOTS] Slot generation complete`);
-  console.log(`[GEN-SLOTS] Total slots: ${slots.length} (Available: ${countAvailable}, Unavailable: ${countUnavailable})`);
-  console.log(`[GEN-SLOTS] Unavailable reasons: Outside Staff Hours: ${countOutsideWorkingHours}, Breaks: ${countBreakOverlap}, Appointments: ${countAppointmentOverlap}, Closures: ${countClosureOverlap}`);
+  
+  
+  
   if (countAvailable > 0) {
     const firstAvailable = slots.find(s => s.available);
-    console.log(`[GEN-SLOTS] Sample available slot: ${firstAvailable.time} - ${firstAvailable.end_time}`);
+    
   }
-  console.log(`[GEN-SLOTS] ========== FINISHED SLOT GENERATION ==========`);
+  
   
   return slots;
 }

@@ -16,11 +16,11 @@ const dayOfWeekUtils = require('./src/utils/dayOfWeekUtils');
  */
 async function fixNumericDayOfWeek() {
   try {
-    console.log('Fixing breaks with numeric day_of_week values...');
+    
     
     // Query all breaks
     const breaks = await Break.findAll();
-    console.log(`Found ${breaks.length} breaks in total`);
+    
     
     let fixedCount = 0;
     
@@ -36,7 +36,7 @@ async function fixNumericDayOfWeek() {
         const numericDay = typeof dayValue === 'number' ? dayValue : parseInt(dayValue, 10);
         const dayName = dayOfWeekUtils.getDayNameFromNumber(numericDay);
         
-        console.log(`Fixing break ID ${breakItem.id}: Converting day_of_week from ${dayValue} to ${dayName}`);
+        
         
         // Update the break
         await breakItem.update({ day_of_week: dayName });
@@ -44,13 +44,13 @@ async function fixNumericDayOfWeek() {
       }
     }
     
-    console.log(`Fixed ${fixedCount} breaks with numeric day_of_week values`);
+    
     
     // Verify the fix
     const verifyBreaks = await Break.findAll();
-    console.log('\nVerifying fixes:');
+    
     verifyBreaks.forEach(breakItem => {
-      console.log(`- ID: ${breakItem.id}, Name: ${breakItem.name}, Day: ${breakItem.day_of_week}, Time: ${breakItem.start_time}-${breakItem.end_time}`);
+      
     });
     
   } catch (error) {

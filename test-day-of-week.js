@@ -8,14 +8,14 @@ let staffId = null;
 // Login function
 const login = async () => {
   try {
-    console.log('Logging in as admin...');
+    
     const response = await axios.post(`${API_URL}/auth/login`, {
       email: 'admin@example.com',
       password: 'admin123'
     });
     
     token = response.data.token;
-    console.log('Login successful');
+    
     return token;
   } catch (error) {
     console.error('Login error:', error.response?.data || error.message);
@@ -26,14 +26,14 @@ const login = async () => {
 // Get staff list
 const getStaffList = async () => {
   try {
-    console.log('Getting staff list...');
+    
     const response = await axios.get(`${API_URL}/staff`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     
     if (response.data.staff && response.data.staff.length > 0) {
       staffId = response.data.staff[0].id;
-      console.log(`Found staff ID: ${staffId}`);
+      
       return staffId;
     } else {
       console.error('No staff found');
@@ -48,7 +48,7 @@ const getStaffList = async () => {
 // Update staff working hours with numeric day_of_week
 const updateStaffWorkingHours = async () => {
   try {
-    console.log(`Updating working hours for staff ID: ${staffId}...`);
+    
     const workingHoursData = {
       workingHours: [
         {
@@ -84,7 +84,7 @@ const updateStaffWorkingHours = async () => {
       headers: { Authorization: `Bearer ${token}` }
     });
     
-    console.log('Updated working hours response:', JSON.stringify(response.data, null, 2));
+    
     return response.data;
   } catch (error) {
     console.error('Update working hours error:', error.response?.data || error.message);
@@ -95,7 +95,7 @@ const updateStaffWorkingHours = async () => {
 // Delete working hours
 const deleteWorkingHours = async () => {
   try {
-    console.log(`Deleting working hours for staff ID: ${staffId}...`);
+    
     const workingHoursData = {
       workingHours: [],
       breaks: []
@@ -105,7 +105,7 @@ const deleteWorkingHours = async () => {
       headers: { Authorization: `Bearer ${token}` }
     });
     
-    console.log('Deleted working hours response:', JSON.stringify(response.data, null, 2));
+    
     return response.data;
   } catch (error) {
     console.error('Delete working hours error:', error.response?.data || error.message);
@@ -120,14 +120,14 @@ const runTests = async () => {
     await getStaffList();
     
     // Test working hours with numeric day_of_week
-    console.log('\n=== Testing working hours with numeric day_of_week ===');
+    
     await updateStaffWorkingHours();
     
     // Test deleting working hours
-    console.log('\n=== Testing deleting working hours ===');
+    
     await deleteWorkingHours();
     
-    console.log('\nAll tests completed successfully!');
+    
   } catch (error) {
     console.error('Test error:', error);
   }

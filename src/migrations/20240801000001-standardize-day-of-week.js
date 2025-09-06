@@ -3,7 +3,7 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    console.log('Starting day of week standardization migration...');
+    
 
     // 1. Add staff_id to breaks table if it doesn't exist
     try {
@@ -19,11 +19,11 @@ module.exports = {
             onUpdate: 'CASCADE',
             onDelete: 'SET NULL'
           });
-          console.log('Added staff_id column to breaks table');
+          
         }
       });
     } catch (error) {
-      console.log('Error checking/adding staff_id column:', error.message);
+      
     }
 
     // 2. Make business_hour_id nullable
@@ -38,9 +38,9 @@ module.exports = {
         onUpdate: 'CASCADE',
         onDelete: 'SET NULL'
       });
-      console.log('Made business_hour_id nullable in breaks table');
+      
     } catch (error) {
-      console.log('Error making business_hour_id nullable:', error.message);
+      
     }
 
     // 3. Convert numeric day_of_week to string ENUM in breaks table
@@ -50,9 +50,9 @@ module.exports = {
         type: Sequelize.ENUM('sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'),
         allowNull: true
       });
-      console.log('Added day_of_week_string column to breaks table');
+      
     } catch (error) {
-      console.log('Error adding day_of_week_string column:', error.message);
+      
     }
     
     // Migrate data from numeric day_of_week to string day_of_week
@@ -70,25 +70,25 @@ module.exports = {
           );
         }
       }
-      console.log('Migrated data from numeric day_of_week to string day_of_week');
+      
     } catch (error) {
-      console.log('Error migrating data:', error.message);
+      
     }
     
     // Drop the old column
     try {
       await queryInterface.removeColumn('breaks', 'day_of_week');
-      console.log('Removed old day_of_week column from breaks table');
+      
     } catch (error) {
-      console.log('Error removing day_of_week column:', error.message);
+      
     }
     
     // Rename the new column
     try {
       await queryInterface.renameColumn('breaks', 'day_of_week_string', 'day_of_week');
-      console.log('Renamed day_of_week_string column to day_of_week');
+      
     } catch (error) {
-      console.log('Error renaming day_of_week_string to day_of_week:', error.message);
+      
     }
 
     // 4. Standardize working_hours table day_of_week ENUM order
@@ -100,9 +100,9 @@ module.exports = {
         ENUM('sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday') 
         NOT NULL;
       `);
-      console.log('Standardized day_of_week in working_hours table');
+      
     } catch (error) {
-      console.log('Error standardizing working_hours day_of_week:', error.message);
+      
     }
 
     // 5. Standardize business_hours table day_of_week ENUM order
@@ -113,16 +113,16 @@ module.exports = {
         ENUM('sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday') 
         NOT NULL;
       `);
-      console.log('Standardized day_of_week in business_hours table');
+      
     } catch (error) {
-      console.log('Error standardizing business_hours day_of_week:', error.message);
+      
     }
 
-    console.log('Day of week standardization migration completed');
+    
   },
 
   async down(queryInterface, Sequelize) {
-    console.log('Rolling back day of week standardization...');
+    
 
     // 1. Convert string day_of_week back to numeric in breaks table
     // First, create a temporary column
@@ -155,9 +155,9 @@ module.exports = {
       // Rename the new column
       await queryInterface.renameColumn('breaks', 'day_of_week_numeric', 'day_of_week');
       
-      console.log('Reverted day_of_week in breaks table');
+      
     } catch (error) {
-      console.log('Error reverting day_of_week in breaks table:', error.message);
+      
     }
 
     // 2. Make business_hour_id required again
@@ -172,17 +172,17 @@ module.exports = {
         onUpdate: 'CASCADE',
         onDelete: 'CASCADE'
       });
-      console.log('Made business_hour_id non-nullable in breaks table');
+      
     } catch (error) {
-      console.log('Error reverting business_hour_id:', error.message);
+      
     }
 
     // 3. Remove staff_id from breaks table
     try {
       await queryInterface.removeColumn('breaks', 'staff_id');
-      console.log('Removed staff_id from breaks table');
+      
     } catch (error) {
-      console.log('Error removing staff_id column:', error.message);
+      
     }
 
     // 4. Revert working_hours table
@@ -193,9 +193,9 @@ module.exports = {
         ENUM('monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday') 
         NOT NULL;
       `);
-      console.log('Reverted day_of_week in working_hours table');
+      
     } catch (error) {
-      console.log('Error reverting working_hours day_of_week:', error.message);
+      
     }
 
     // 5. Revert business_hours table
@@ -206,11 +206,11 @@ module.exports = {
         ENUM('monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday') 
         NOT NULL;
       `);
-      console.log('Reverted day_of_week in business_hours table');
+      
     } catch (error) {
-      console.log('Error reverting business_hours day_of_week:', error.message);
+      
     }
 
-    console.log('Rollback of day of week standardization completed');
+    
   }
 };

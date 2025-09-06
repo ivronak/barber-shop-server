@@ -23,7 +23,7 @@ const logActivity = async (data) => {
       });
     } else {
       // Otherwise, just log to console (helpful for development)
-      console.log(`[ACTIVITY LOG] ${new Date().toISOString()} - User ${data.user_id} performed ${data.action}: ${data.details}`);
+      
       return null;
     }
   } catch (error) {

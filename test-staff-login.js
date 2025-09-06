@@ -7,9 +7,9 @@ const API_URL = process.env.API_URL || 'http://localhost:5000/api';
 // Test staff login with a specific user or create one if needed
 async function testStaffLogin() {
   try {
-    console.log('Connecting to database...');
+    
     await sequelize.authenticate();
-    console.log('Connected to database successfully');
+    
     
     // Find or create a test staff user
     let staffUser = await User.findOne({
@@ -20,7 +20,7 @@ async function testStaffLogin() {
     });
     
     if (!staffUser) {
-      console.log('Creating test staff user...');
+      
       const bcrypt = require('bcryptjs');
       const salt = await bcrypt.genSalt(10);
       const hashedPassword = await bcrypt.hash('password123', salt);
@@ -33,9 +33,9 @@ async function testStaffLogin() {
         role: 'staff'
       });
       
-      console.log('Test staff user created with ID:', staffUser.id);
+      
     } else {
-      console.log('Found existing test staff user with ID:', staffUser.id);
+      
     }
     
     // Make sure the staff record exists
@@ -46,20 +46,20 @@ async function testStaffLogin() {
     });
     
     if (!staffRecord) {
-      console.log('Creating staff record for test user...');
+      
       staffRecord = await Staff.create({
         user_id: staffUser.id,
         position: 'Test Barber',
         commission_percentage: 20.00,
         is_available: true
       });
-      console.log('Staff record created with ID:', staffRecord.id);
+      
     } else {
-      console.log('Found existing staff record with ID:', staffRecord.id);
+      
     }
     
     // Test login
-    console.log('\nTesting staff login...');
+    
     const loginResponse = await fetch(`${API_URL}/auth/login`, {
       method: 'POST',
       headers: {
@@ -72,14 +72,14 @@ async function testStaffLogin() {
     });
     
     const loginData = await loginResponse.json();
-    console.log('Login response status:', loginResponse.status);
-    console.log('Login response data:', JSON.stringify(loginData, null, 2));
+    
+    
     
     if (loginData.success && loginData.token) {
-      console.log('Staff login successful!');
+      
       
       // Test getting user profile
-      console.log('\nTesting get user profile...');
+      
       const profileResponse = await fetch(`${API_URL}/auth/me`, {
         method: 'GET',
         headers: {
@@ -89,16 +89,16 @@ async function testStaffLogin() {
       });
       
       const profileData = await profileResponse.json();
-      console.log('Profile response status:', profileResponse.status);
-      console.log('Profile response data:', JSON.stringify(profileData, null, 2));
+      
+      
       
       if (profileData.success) {
-        console.log('Got user profile successfully!');
+        
       } else {
-        console.log('Failed to get user profile');
+        
       }
     } else {
-      console.log('Staff login failed');
+      
     }
     
   } catch (error) {

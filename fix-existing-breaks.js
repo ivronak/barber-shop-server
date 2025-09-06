@@ -16,11 +16,11 @@ const dayOfWeekUtils = require('./src/utils/dayOfWeekUtils');
  */
 async function updateExistingBreaks() {
   try {
-    console.log('Updating existing breaks to use string day_of_week values...');
+    
     
     // Get all breaks
     const breaks = await Break.findAll();
-    console.log(`Found ${breaks.length} breaks to check`);
+    
     
     let updatedCount = 0;
     
@@ -38,12 +38,12 @@ async function updateExistingBreaks() {
           // Update the break
           await breakItem.update({ day_of_week: dayName });
           updatedCount++;
-          console.log(`Updated break ID ${breakItem.id}: day ${dayIndex} → ${dayName}`);
+          
         }
       }
     }
     
-    console.log(`\nUpdated ${updatedCount} breaks to use string day_of_week values`);
+    
   } catch (error) {
     console.error('Update error:', error);
   } finally {

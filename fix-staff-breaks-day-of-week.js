@@ -34,31 +34,31 @@ const numberToDayMap = {
 
 async function fixStaffBreakDayOfWeekValues() {
   try {
-    console.log('Starting staff break day-of-week mismatch fix...');
+    
     
     // Get all staff
     const staffMembers = await Staff.findAll();
-    console.log(`Found ${staffMembers.length} staff members`);
+    
     
     // Identify and fix staff-specific breaks
     let totalUpdates = 0;
     
     for (const staff of staffMembers) {
-      console.log(`\nChecking breaks for staff ID: ${staff.id}`);
+      
       
       // Get staff working hours
       const workingHours = await WorkingHour.findAll({
         where: { staff_id: staff.id, is_break: false }
       });
       
-      console.log(`Found ${workingHours.length} working hour entries for this staff`);
+      
       
       // Get staff breaks
       const staffBreaks = await Break.findAll({
         where: { staff_id: staff.id }
       });
       
-      console.log(`Found ${staffBreaks.length} break entries for this staff`);
+      
       
       if (staffBreaks.length === 0) {
         continue; // Skip to next staff member
@@ -70,7 +70,7 @@ async function fixStaffBreakDayOfWeekValues() {
         const dayString = workingHour.day_of_week.toLowerCase();
         const correctDayNumber = dayToNumberMap[dayString];
         staffDayMap.set(dayString, correctDayNumber);
-        console.log(`Staff works on ${dayString} (day number: ${correctDayNumber})`);
+        
       }
       
       // Check and update each break's day_of_week
@@ -79,7 +79,7 @@ async function fixStaffBreakDayOfWeekValues() {
       for (const breakItem of staffBreaks) {
         // If break has no day_of_week value, try to infer it
         if (breakItem.day_of_week === null || breakItem.day_of_week === undefined) {
-          console.log(`- Break ID ${breakItem.id} has null day_of_week, attempting to infer from associated working hours`);
+          
           
           // Find a working hour that could match this break
           // We'll look at all working hours and see if the break time falls within any
@@ -89,7 +89,7 @@ async function fixStaffBreakDayOfWeekValues() {
           for (const [dayString, dayNumber] of staffDayMap.entries()) {
             // Found a potential match
             inferredDay = dayNumber;
-            console.log(`  -> Inferred day_of_week = ${dayNumber} (${dayString})`);
+            
             foundMatch = true;
             break;  // Use the first available working day (simplification)
           }
@@ -107,7 +107,7 @@ async function fixStaffBreakDayOfWeekValues() {
               { where: { id: breakItem.id } }
             );
           } else {
-            console.log(`  -> Could not infer day_of_week for break ID ${breakItem.id}, no matching working hours found`);
+            
           }
         } 
         // If break has a day_of_week value, check if it aligns with working hours
@@ -123,7 +123,7 @@ async function fixStaffBreakDayOfWeekValues() {
             }
           }
           
-          console.log(`- Break ID ${breakItem.id}: Current day_of_week = ${currentDay} (${numberToDayMap[currentDay]}), is correct: ${isCorrect}`);
+          
           
           // If the day is incorrect (staff doesn't work that day), fix it
           if (!isCorrect && staffDayMap.size > 0) {
@@ -131,7 +131,7 @@ async function fixStaffBreakDayOfWeekValues() {
             const firstWorkingDayPair = Array.from(staffDayMap.entries())[0];
             const correctDayNumber = firstWorkingDayPair[1];
             
-            console.log(`  -> Needs update to ${correctDayNumber} (${numberToDayMap[correctDayNumber]})`);
+            
             
             updates.push({
               breakId: breakItem.id,
@@ -150,20 +150,20 @@ async function fixStaffBreakDayOfWeekValues() {
       
       // Summary for this staff
       if (updates.length > 0) {
-        console.log(`\nUpdated ${updates.length} breaks for staff ID: ${staff.id}`);
+        
         totalUpdates += updates.length;
       }
     }
     
     // Summary
-    console.log('\n--- Final Update Summary ---');
+    
     if (totalUpdates === 0) {
-      console.log('No staff breaks needed updating. All day_of_week values are already correct or could not be inferred.');
+      
     } else {
-      console.log(`Updated a total of ${totalUpdates} staff breaks with correct day_of_week values.`);
+      
     }
     
-    console.log('\nStaff break fix completed successfully!');
+    
   } catch (error) {
     console.error('Error fixing staff break day of week mismatch:', error);
   } finally {

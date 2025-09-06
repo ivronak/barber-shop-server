@@ -27,9 +27,9 @@ module.exports = {
         updated_at: new Date()
       }], {});
       
-      console.log('Admin user seeded successfully');
+      
     } else {
-      console.log('Admin user already exists, skipping');
+      
     }
   },
 

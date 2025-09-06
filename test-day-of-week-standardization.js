@@ -17,19 +17,19 @@ const { getConsistentDayOfWeek } = require('./src/utils/appointment.utils');
  */
 async function testDayOfWeekStandardization() {
   try {
-    console.log('Testing day of week standardization...');
+    
     
     // 1. Test creating a staff break for Monday
-    console.log('\n1. Creating a staff break for Monday...');
+    
     
     // Find a staff member
     const staff = await Staff.findOne();
     if (!staff) {
-      console.log('No staff found, skipping test');
+      
       return;
     }
     
-    console.log(`Found staff: ${staff.id}`);
+    
     
     // Create a break for Monday
     const mondayBreak = await Break.create({
@@ -40,27 +40,27 @@ async function testDayOfWeekStandardization() {
       end_time: '13:00:00'
     });
     
-    console.log(`Created break: ${mondayBreak.id} on ${mondayBreak.day_of_week}`);
+    
     
     // 2. Test finding breaks for Monday
-    console.log('\n2. Finding breaks for Monday...');
+    
     
     // Get Monday's numeric day (for legacy code)
     const mondayNumeric = dayOfWeekUtils.getDayNumberFromName('monday');
-    console.log(`Monday's numeric day: ${mondayNumeric}`);
+    
     
     // Find breaks for Monday using string value
     const mondayBreaks = await Break.findAll({
       where: { day_of_week: 'monday' }
     });
     
-    console.log(`Found ${mondayBreaks.length} breaks for Monday using string value`);
+    
     mondayBreaks.forEach(breakItem => {
-      console.log(`- ${breakItem.id}: "${breakItem.name}" on ${breakItem.day_of_week} (${breakItem.start_time} - ${breakItem.end_time})`);
+      
     });
     
     // 3. Test getConsistentDayOfWeek function
-    console.log('\n3. Testing getConsistentDayOfWeek function...');
+    
     
     // Create a date for next Monday
     const today = new Date();
@@ -69,22 +69,22 @@ async function testDayOfWeekStandardization() {
     nextMonday.setDate(today.getDate() + daysUntilMonday);
     
     const mondayStr = nextMonday.toISOString().split('T')[0]; // YYYY-MM-DD
-    console.log(`Next Monday: ${mondayStr}`);
+    
     
     const { dayOfWeek, numericDayOfWeek } = getConsistentDayOfWeek(mondayStr);
-    console.log(`Day of week: ${dayOfWeek}, numeric day: ${numericDayOfWeek}`);
+    
     
     if (dayOfWeek === 'monday' && numericDayOfWeek === 1) {
-      console.log('✅ getConsistentDayOfWeek returns correct values');
+      
     } else {
-      console.log('❌ getConsistentDayOfWeek returns incorrect values');
+      
     }
     
     // Clean up
     await mondayBreak.destroy();
-    console.log('\nTest break deleted');
     
-    console.log('\nTests completed successfully!');
+    
+    
   } catch (error) {
     console.error('Test error:', error);
   } finally {
